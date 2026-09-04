@@ -20,10 +20,10 @@ services:
     command: npm run dev
     env_file: .env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://babyfoot:babyfoot@db:5432/babyfoot}
-      DATABASE_URL_TEST: ${DATABASE_URL_TEST:-postgres://babyfoot:babyfoot@db:5432/babyfoot_test}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL manquant - renseigne .env}
+      DATABASE_URL_TEST: ${DATABASE_URL_TEST:?DATABASE_URL_TEST manquant}
       PORT: ${PORT:-33333}
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-prod-please-override}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant - 32+ chars requis}
     # local only — pas de reverse proxy, API accessible sur http://localhost:33333 et http://192.168.1.181:33333
     ports:
       - "${PORT:-33333}:${PORT:-33333}"
@@ -80,7 +80,7 @@ services:
     command: npx drizzle-kit studio --host 0.0.0.0 --port 4983 --verbose
     env_file: .env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://babyfoot:babyfoot@db:5432/babyfoot}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL manquant}
       NODE_ENV: development
     ports:
       - "${STUDIO_PORT:-4983}:4983"
