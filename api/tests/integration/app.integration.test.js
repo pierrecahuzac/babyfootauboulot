@@ -85,7 +85,7 @@ describe('API intégration (mock DB) - 3 types: intégration', () => {
 
   beforeEach(async () => {
     mock = createMockDb();
-    const { app: fastify } = createApp({ db: mock.db, pool: mock.pool, players: mock.playersTable, matches: mock.matchesTable });
+    const { app: fastify } = await createApp({ db: mock.db, pool: mock.pool, players: mock.playersTable, matches: mock.matchesTable });
     app = fastify;
     await app.ready();
   });

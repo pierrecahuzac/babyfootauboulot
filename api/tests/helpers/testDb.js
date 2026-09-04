@@ -2,17 +2,43 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../../src/db/schema.js';
 import { createApp } from '../../src/app.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+let fs;
+try { fs = require('fs'); } catch { fs = null; }
 
 const getTestDatabaseUrl = () => {
   if (process.env.DATABASE_URL_TEST) return process.env.DATABASE_URL_TEST;
-  // si on est dans docker, db est joignable via host "db"
-  // on teste si on peut résoudre db, sinon localhost
+  if (process.env.DATABASE_URL?.includes('babyfoot_test')) return process.env.DATABASE_URL;
+  // tente de lire .env pour récupérer le bon password / URL
+  if (fs) {
+    const candidates = ['/home/thaliios/Dev/Babyfoot/.env', '.env', '../.env', '../../.env', '../../../.env'];
+    // aussi via cwd
+    try {
+      const cwdEnv = `${process.cwd()}/.env`;
+      if (!candidates.includes(cwdEnv)) candidates.unshift(cwdEnv);
+      // babyfoot root .env (2 niveaux au-dessus de api/tests/helpers)
+      const rootEnv = `${process.cwd()}/../.env`;
+      if (!candidates.includes(rootEnv)) candidates.unshift(rootEnv);
+    } catch {}
+    for (const p of candidates) {
+      try {
+        if (fs.existsSync(p)) {
+          const content = fs.readFileSync(p, 'utf8');
+          const m = content.match(/DATABASE_URL_TEST\s*=\s*(.+)/);
+          if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+          const pw = content.match(/POSTGRES_PASSWORD\s*=\s*(.+)/);
+          if (pw) {
+            const host = process.env.PG_HOST || (process.env.CI ? 'db' : 'localhost');
+            return `postgres://babyfoot:${pw[1].trim().replace(/^["']|["']$/g, '')}@${host}:5432/babyfoot_test`;
+          }
+        }
+      } catch {}
+    }
+  }
   const host = process.env.PG_HOST || (process.env.CI ? 'db' : 'localhost');
-  // tente localhost par défaut pour run host, db pour CI/docker
-  // on retourne une URL qui marche dans les deux cas en essayant
-  return process.env.DATABASE_URL?.includes('babyfoot_test')
-    ? process.env.DATABASE_URL
-    : `postgres://babyfoot:babyfoot@${host}:5432/babyfoot_test`;
+  return `postgres://babyfoot:babyfoot@${host}:5432/babyfoot_test`;
 };
 
 export const createTestApp = async () => {
@@ -25,12 +51,10 @@ export const createTestApp = async () => {
   };
 
   const ensureDbExists = async (targetUrl) => {
-    // essaye de se connecter, si DB n'existe pas on la crée via DB postgres
     try {
       return await tryPool(targetUrl);
     } catch (e) {
       if (!e.message.includes('does not exist') && !e.message.includes('3D000')) throw e;
-      // tente de créer la DB en se connectant à postgres
       const adminUrl = targetUrl.replace(/\/babyfoot_test$/, '/postgres');
       const adminPool = new pg.Pool({ connectionString: adminUrl });
       try {
@@ -48,21 +72,48 @@ export const createTestApp = async () => {
   try {
     pool = await ensureDbExists(url);
   } catch (e) {
-    // fallback autre host (localhost <-> db)
-    const altHost = url.includes('@localhost:') ? 'db' : 'localhost';
-    const altUrl = url.replace(/@[^:]+:/, `@${altHost}:`);
-    try {
-      pool = await ensureDbExists(altUrl);
-      url = altUrl;
-    } catch (e2) {
-      throw new Error(`Impossible de se connecter à la test DB (${url} / ${altUrl}): ${e.message} / ${e2.message}`);
+    const isAuthError = e.message.includes('password authentication failed');
+    // si auth failed, tente de reconstruire l'URL avec password du .env et retry
+    if (isAuthError && fs) {
+      try {
+        for (const p of ['/home/thaliios/Dev/Babyfoot/.env', `${process.cwd()}/.env`, `${process.cwd()}/../.env`]) {
+          if (fs.existsSync(p)) {
+            const content = fs.readFileSync(p, 'utf8');
+            const pw = content.match(/POSTGRES_PASSWORD\s*=\s*(.+)/);
+            if (pw) {
+              const pwd = pw[1].trim().replace(/^["']|["']$/g, '');
+              const candidates = [
+                `postgres://babyfoot:${pwd}@localhost:5432/babyfoot_test`,
+                `postgres://babyfoot:${pwd}@db:5432/babyfoot_test`,
+              ];
+              for (const cand of candidates) {
+                try {
+                  pool = await ensureDbExists(cand);
+                  url = cand;
+                  break;
+                } catch {}
+              }
+              if (pool) break;
+            }
+          }
+        }
+      } catch {}
+    }
+    if (!pool) {
+      const altHost = url.includes('@localhost:') ? 'db' : 'localhost';
+      const altUrl = url.replace(/@[^:]+:/, `@${altHost}:`);
+      try {
+        pool = await ensureDbExists(altUrl);
+        url = altUrl;
+      } catch (e2) {
+        throw new Error(`Impossible de se connecter à la test DB (${url} / ${altUrl}): ${e.message} / ${e2.message}`);
+      }
     }
   }
 
   const db = drizzle(pool, { schema });
 
-  // on crée l'app avec la vraie DB de test (on passe users + ligues)
-  const { app, initDb } = createApp({ db, pool, players: schema.players, matches: schema.matches, users: schema.users, ligues: schema.ligues, ligueMembers: schema.ligueMembers });
+  const { app, initDb } = await createApp({ db, pool, players: schema.players, matches: schema.matches, users: schema.users, ligues: schema.ligues, ligueMembers: schema.ligueMembers });
   await initDb();
 
   const clean = async () => {
