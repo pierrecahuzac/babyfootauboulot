@@ -141,8 +141,7 @@ async function main() {
     );
     if (rows[0]) {
       users.push({ id: rows[0].id, pseudo: 'admin', poste: 'Les 2', niveau: 'Confirmé', email: 'admin@example.com', role: 'admin' });
-      console.log(`  ✓ admin@example.com / admin1234 (admin)`);
-      await pool.query(`INSERT INTO players (pseudo, poste, niveau) VALUES ($1,$2,$3) ON CONFLICT (pseudo) DO NOTHING`, ['admin', 'Les 2', 'Confirmé']);
+      console.log(`  ✓ admin@example.com / admin1234 (admin système, pas joueur)`);
     }
   } catch (e) { console.error(`  ✗ admin: ${e.message}`); }
 
@@ -223,7 +222,7 @@ async function main() {
   for (const lig of ligues) {
     const { rows: members } = await pool.query(`SELECT u.id, u.pseudo, u.poste FROM users u JOIN ligue_members m ON m.user_id=u.id WHERE m.ligue_id=$1`, [lig.id]);
     if (members.length < 2) continue;
-    const matchCount = 12 + Math.floor(Math.random() * 12); // 12-23 par ligue
+    const matchCount = 24; // 24 par ligue → 120 total pour 5 ligues, scores serrés et larges
     for (let k = 0; k < matchCount; k++) {
       const format = Math.random() > 0.35 ? '2v2' : '1v1';
       const need = format === '1v1' ? 2 : 4;
