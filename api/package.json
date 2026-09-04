@@ -11,7 +11,11 @@
     "test:integration:real": "vitest run tests/integration/app.real.integration.test.js",
     "test:integration:mock": "vitest run tests/integration/app.integration.test.js",
     "test:e2e": "RUN_E2E=1 vitest run tests/e2e",
-    "test:db:setup": "node -e \"import pg from 'pg'; const p=new pg.Pool({connectionString: process.env.DATABASE_URL_TEST || 'postgres://babyfoot:babyfoot@localhost:5432/postgres'}); p.query('CREATE DATABASE babyfoot_test').then(()=>console.log('test DB créée')).catch(e=>console.log(e.message)).finally(()=>p.end())\""
+    "test:db:setup": "node -e \"import pg from 'pg'; const p=new pg.Pool({connectionString: process.env.DATABASE_URL_TEST || 'postgres://babyfoot:babyfoot@localhost:5432/postgres'}); p.query('CREATE DATABASE babyfoot_test').then(()=>console.log('test DB créée')).catch(e=>console.log(e.message)).finally(()=>p.end())\"",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio --host 0.0.0.0 --port 4983 --verbose",
+    "db:studio:host": "sh -c 'DATABASE_URL=$(echo ${DATABASE_URL:-postgres://babyfoot:babyfoot@db:5432/babyfoot} | sed s/@db:/@localhost:/) drizzle-kit studio --host 127.0.0.1 --port 4983 --verbose'"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",

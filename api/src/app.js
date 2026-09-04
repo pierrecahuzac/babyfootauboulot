@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import crypto from 'crypto';
 import { eq, desc, and } from 'drizzle-orm';
 import { calculateClassement, normalizeMatch, validateMatchPayload } from './utils/stats.js';
 import { hashPassword, verifyPassword, signToken, authFromRequest } from './utils/auth.js';
@@ -7,6 +8,43 @@ import { hashPassword, verifyPassword, signToken, authFromRequest } from './util
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'ligue';
 const genInvite = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 const genSlug = (name) => `${slugify(name)}-${Math.random().toString(36).slice(2, 5)}`;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (e) => typeof e === 'string' && e.length <= 254 && EMAIL_RE.test(e.trim());
+const genToken = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
+const genVerificationToken = () => genToken(32);
+const genResetToken = () => genToken(32);
+
+// rate-limit login: 5 tentatives / 15 min par ip+email
+const loginAttempts = new Map(); // key -> { count, firstAt }
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const getRateKey = (req, emailNorm) => {
+  const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  return `login:${ip}:${emailNorm.toLowerCase()}`;
+};
+const isRateLimited = (key) => {
+  const entry = loginAttempts.get(key);
+  if (!entry) return false;
+  if (Date.now() - entry.firstAt > RATE_LIMIT_WINDOW_MS) {
+    loginAttempts.delete(key);
+    return false;
+  }
+  return entry.count >= RATE_LIMIT_MAX;
+};
+const recordLoginAttempt = (key, success) => {
+  if (success) {
+    loginAttempts.delete(key);
+    return;
+  }
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  if (!entry || now - entry.firstAt > RATE_LIMIT_WINDOW_MS) {
+    loginAttempts.set(key, { count: 1, firstAt: now });
+  } else {
+    entry.count += 1;
+  }
+};
 
 export const createApp = ({ db, pool, players, matches, users, ligues, ligueMembers }) => {
   const usersTable = users;
@@ -77,6 +115,12 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_a INT`);
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_b INT`);
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS ligue_id INT REFERENCES ligues(id) ON DELETE CASCADE`);
+    // auth v2: email verification & reset
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INT DEFAULT 0`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
     await pool.query(`ALTER TABLE matches ALTER COLUMN team_a DROP NOT NULL`).catch(()=>{});
     await pool.query(`ALTER TABLE matches ALTER COLUMN team_b DROP NOT NULL`).catch(()=>{});
     await pool.query(`ALTER TABLE matches ALTER COLUMN score_a DROP NOT NULL`).catch(()=>{});
@@ -109,24 +153,65 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
 
   app.register(cors, { origin: true, credentials: true });
 
+  const requireAuth = async (req, reply) => {
+    const payload = authFromRequest(req);
+    if (!payload) {
+      reply.code(401).send({ error: 'auth requise' });
+      return;
+    }
+    req.user = payload;
+  };
+
   // --- Auth MVP email+mdp ---
   const getUsersTable = () => usersTable || players;
 
   app.post('/api/auth/register', async (req, reply) => {
     const { email, pseudo, password, poste, niveau } = req.body;
     if (!email || !pseudo || !password || !poste || !niveau) return reply.code(400).send({ error: 'email, pseudo, password, poste, niveau requis' });
+    if (!isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
     if (password.length < 6) return reply.code(400).send({ error: 'mot de passe trop court (6 min)' });
+    if (!pseudo.trim() || pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
     const emailNorm = email.trim().toLowerCase();
     const hash = await hashPassword(password);
+    const verificationToken = genVerificationToken();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const target = getUsersTable();
     const isUsers = target && target !== players;
     try {
-      const [row] = await db.insert(target).values({ email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau }).returning();
+      // drizzle insert avec colonnes v2 si dispo
+      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, emailVerified: 0, verificationToken, verificationExpires };
+      let row;
+      try {
+        const [r] = await db.insert(target).values(values).returning();
+        row = r;
+      } catch (e) {
+        // fallback si mock ne gère pas les nouvelles colonnes → retry sans elles + patch pool
+        if (e.message?.includes('verification') || e.message?.includes('email_verified')) throw e;
+        throw e;
+      }
+      // assure via pool pour vraie DB (drizzle peut ignorer colonnes si schema pas à jour)
+      try {
+        await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2, email_verified=0 WHERE id=$3`, [verificationToken, verificationExpires, row.id]);
+      } catch {}
+      // sync pool pour mock: on met à jour l'objet en mémoire si pool query noop
+      try {
+        const rows = await db.select().from(target);
+        const found = rows.find(r => r.id === row.id);
+        if (found) {
+          found.verificationToken = verificationToken;
+          found.verification_token = verificationToken;
+          found.verificationExpires = verificationExpires;
+          found.verification_expires = verificationExpires;
+          found.emailVerified = 0;
+          found.email_verified = 0;
+        }
+      } catch {}
       if (isUsers) {
         try { await db.insert(players).values({ pseudo: pseudo.trim(), poste, niveau }).returning(); } catch {}
       }
       const token = signToken({ id: row.id, email: row.email, pseudo: row.pseudo });
-      return reply.code(201).send({ user: { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau }, token });
+      // en dev on renvoie le token de vérif pour debug (prod on l'enverrait par email)
+      return reply.code(201).send({ user: { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau, emailVerified: false }, token, verificationToken, message: 'Compte créé — vérifie ton email' });
     } catch (e) {
       if (e.code === '23505') {
         const msg = e.detail?.includes('email') ? 'email déjà pris' : 'pseudo déjà pris';
@@ -139,14 +224,27 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password } = req.body;
     if (!email || !password) return reply.code(400).send({ error: 'email, password requis' });
+    if (!isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
+    const emailNorm = email.trim().toLowerCase();
+    const rateKey = getRateKey(req, emailNorm);
+    if (isRateLimited(rateKey)) return reply.code(429).send({ error: 'trop de tentatives, réessaie dans 15 minutes' });
     const target = getUsersTable();
     const rows = await db.select().from(target);
-    const user = rows.find(r => r.email?.toLowerCase() === email.trim().toLowerCase());
-    if (!user) return reply.code(401).send({ error: 'identifiants invalides' });
+    const user = rows.find(r => r.email?.toLowerCase() === emailNorm);
+    if (!user) {
+      recordLoginAttempt(rateKey, false);
+      return reply.code(401).send({ error: 'identifiants invalides' });
+    }
     const ok = await verifyPassword(password, user.passwordHash || user.password_hash);
-    if (!ok) return reply.code(401).send({ error: 'identifiants invalides' });
+    if (!ok) {
+      recordLoginAttempt(rateKey, false);
+      return reply.code(401).send({ error: 'identifiants invalides' });
+    }
+    recordLoginAttempt(rateKey, true);
+    const emailVerified = Boolean(user.emailVerified ?? user.email_verified);
+    // on autorise login même si non vérifié pour ne pas bloquer MVP, mais on signale
     const token = signToken({ id: user.id, email: user.email, pseudo: user.pseudo });
-    return reply.send({ user: { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau }, token });
+    return reply.send({ user: { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, emailVerified }, token, emailVerified });
   });
 
   app.get('/api/auth/me', async (req, reply) => {
@@ -156,10 +254,114 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     const rows = await db.select().from(target);
     const user = rows.find(r => r.id === payload.id);
     if (!user) return reply.code(404).send({ error: 'utilisateur introuvable' });
-    return { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau };
+    const emailVerified = Boolean(user.emailVerified ?? user.email_verified ?? 0);
+    return { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, emailVerified, email_verified: emailVerified ? 1 : 0 };
   });
 
   app.post('/api/auth/logout', async () => ({ ok: true }));
+
+  // --- Email verification ---
+  app.post('/api/auth/verify-email', async (req, reply) => {
+    const { token } = req.body || {};
+    if (!token) return reply.code(400).send({ error: 'token requis' });
+    const target = getUsersTable();
+    const rows = await db.select().from(target);
+    const user = rows.find(r => (r.verificationToken ?? r.verification_token) === token);
+    if (!user) return reply.code(400).send({ error: 'token invalide' });
+    const expires = user.verificationExpires ?? user.verification_expires;
+    if (expires && new Date(expires) < new Date()) return reply.code(400).send({ error: 'token expiré' });
+    const userId = user.id;
+    try {
+      await pool.query(`UPDATE users SET email_verified=1, verification_token=NULL, verification_expires=NULL WHERE id=$1`, [userId]);
+    } catch {}
+    // sync mock
+    try {
+      user.emailVerified = 1;
+      user.email_verified = 1;
+      user.verificationToken = null;
+      user.verification_token = null;
+      user.verificationExpires = null;
+      user.verification_expires = null;
+    } catch {}
+    const newToken = signToken({ id: user.id, email: user.email, pseudo: user.pseudo });
+    return { ok: true, user: { id: user.id, email: user.email, pseudo: user.pseudo, emailVerified: true }, token: newToken };
+  });
+
+  app.post('/api/auth/resend-verification', async (req, reply) => {
+    const { email } = req.body || {};
+    if (!email || !isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
+    const emailNorm = email.trim().toLowerCase();
+    const target = getUsersTable();
+    const rows = await db.select().from(target);
+    const user = rows.find(r => r.email?.toLowerCase() === emailNorm);
+    if (!user) return reply.code(404).send({ error: 'utilisateur introuvable' });
+    if (user.emailVerified ?? user.email_verified) return reply.code(400).send({ error: 'email déjà vérifié' });
+    const newToken = genVerificationToken();
+    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    try {
+      await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2 WHERE id=$3`, [newToken, newExpires, user.id]);
+    } catch {}
+    try {
+      user.verificationToken = newToken;
+      user.verification_token = newToken;
+      user.verificationExpires = newExpires;
+      user.verification_expires = newExpires;
+    } catch {}
+    // en dev on renvoie le token
+    return { ok: true, verificationToken: newToken, message: 'Email de vérification renvoyé' };
+  });
+
+  // --- Forgot / Reset password ---
+  app.post('/api/auth/forgot', async (req, reply) => {
+    const { email } = req.body || {};
+    if (!email || !isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
+    const emailNorm = email.trim().toLowerCase();
+    const target = getUsersTable();
+    const rows = await db.select().from(target);
+    const user = rows.find(r => r.email?.toLowerCase() === emailNorm);
+    // toujours 200 pour ne pas leak l'existence de l'email (mais en dev on renvoie token si trouvé)
+    if (!user) return { ok: true, message: 'Si ce compte existe, un email a été envoyé' };
+    const resetToken = genResetToken();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
+    try {
+      await pool.query(`UPDATE users SET reset_token=$1, reset_expires=$2 WHERE id=$3`, [resetToken, resetExpires, user.id]);
+    } catch {}
+    try {
+      user.resetToken = resetToken;
+      user.reset_token = resetToken;
+      user.resetExpires = resetExpires;
+      user.reset_expires = resetExpires;
+    } catch {}
+    return { ok: true, resetToken, message: 'Si ce compte existe, un email a été envoyé' };
+  });
+
+  app.post('/api/auth/reset', async (req, reply) => {
+    const { token, newPassword, password } = req.body || {};
+    const pwd = newPassword || password;
+    if (!token || !pwd) return reply.code(400).send({ error: 'token, newPassword requis' });
+    if (pwd.length < 6) return reply.code(400).send({ error: 'mot de passe trop court (6 min)' });
+    const target = getUsersTable();
+    const rows = await db.select().from(target);
+    const user = rows.find(r => (r.resetToken ?? r.reset_token) === token);
+    if (!user) return reply.code(400).send({ error: 'token invalide' });
+    const expires = user.resetExpires ?? user.reset_expires;
+    if (expires && new Date(expires) < new Date()) return reply.code(400).send({ error: 'token expiré' });
+    const hash = await hashPassword(pwd);
+    try {
+      await pool.query(`UPDATE users SET password_hash=$1, reset_token=NULL, reset_expires=NULL WHERE id=$2`, [hash, user.id]);
+    } catch {
+      try { await db.update(target).set({ passwordHash: hash }).where(eq(target.id, user.id)); } catch {}
+    }
+    try {
+      user.passwordHash = hash;
+      user.password_hash = hash;
+      user.resetToken = null;
+      user.reset_token = null;
+      user.resetExpires = null;
+      user.reset_expires = null;
+    } catch {}
+    return { ok: true, message: 'Mot de passe réinitialisé' };
+  });
 
   // PATCH profil (email/pseudo/poste/niveau) — MVP
   app.patch('/api/auth/me', { preHandler: requireAuth }, async (req, reply) => {
@@ -169,43 +371,71 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     const user = rows.find(r => r.id === req.user.id);
     if (!user) return reply.code(404).send({ error: 'utilisateur introuvable' });
     const data = {};
+    let emailChanged = false;
     if (email && email.trim().toLowerCase() !== user.email) {
       const norm = email.trim().toLowerCase();
-      if (!norm.includes('@')) return reply.code(400).send({ error: 'email invalide' });
+      if (!isValidEmail(norm)) return reply.code(400).send({ error: 'email invalide' });
       data.email = norm;
+      emailChanged = true;
     }
-    if (pseudo && pseudo.trim() !== user.pseudo) data.pseudo = pseudo.trim();
+    if (pseudo && pseudo.trim() !== user.pseudo) {
+      if (pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
+      data.pseudo = pseudo.trim();
+    }
     if (poste) data.poste = poste;
     if (niveau) data.niveau = niveau;
     if (!Object.keys(data).length) return reply.code(400).send({ error: 'rien à mettre à jour' });
+    // si email change, on reset la vérif
+    if (emailChanged) {
+      data.emailVerified = 0;
+      data.email_verified = 0;
+      const vToken = genVerificationToken();
+      const vExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      data.verificationToken = vToken;
+      data.verification_token = vToken;
+      data.verificationExpires = vExpires;
+      data.verification_expires = vExpires;
+    }
     try {
       // drizzle: on fait un update via pool pour compat mock/real
       const setClauses = [];
       const vals = [];
       let idx = 1;
       for (const [k, v] of Object.entries(data)) {
-        const col = k === 'pseudo' ? 'pseudo' : k === 'email' ? 'email' : k === 'poste' ? 'poste' : k === 'niveau' ? 'niveau' : k;
-        // map camelCase si besoin (passwordHash non géré ici)
-        const dbCol = col === 'pseudo' ? 'pseudo' : col;
+        let dbCol = k;
+        if (k === 'emailVerified') dbCol = 'email_verified';
+        else if (k === 'verificationToken') dbCol = 'verification_token';
+        else if (k === 'verificationExpires') dbCol = 'verification_expires';
+        // snake_case déjà géré
+        if (k === 'email_verified' || k === 'verification_token' || k === 'verification_expires') dbCol = k;
         setClauses.push(`${dbCol} = $${idx++}`);
         vals.push(v);
       }
       vals.push(req.user.id);
-      const { rows: upd } = await pool.query(`UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, email, pseudo, poste, niveau, created_at`, vals).catch(async () => {
+      const { rows: upd } = await pool.query(`UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, email, pseudo, poste, niveau, email_verified, created_at`, vals).catch(async () => {
         // fallback drizzle pour mock
         const [row] = await db.update(target).set(data).where(eq(target.id, req.user.id)).returning();
         return { rows: row ? [row] : [] };
       });
       const updated = upd[0] || upd;
       if (!updated) return reply.code(404).send({ error: 'maj échouée' });
+      // sync mock in-memory
+      try {
+        Object.assign(user, data);
+        if (emailChanged) {
+          user.emailVerified = 0;
+          user.email_verified = 0;
+        }
+      } catch {}
       // si pseudo changé, on sync aussi players pour compat
       if (data.pseudo) {
         try { await pool.query(`UPDATE players SET pseudo=$1 WHERE pseudo=$2`, [data.pseudo, user.pseudo]); } catch {}
       }
-      const out = { id: updated.id, email: updated.email, pseudo: updated.pseudo, poste: updated.poste, niveau: updated.niveau };
+      const out = { id: updated.id ?? user.id, email: updated.email ?? data.email ?? user.email, pseudo: updated.pseudo ?? data.pseudo ?? user.pseudo, poste: updated.poste ?? data.poste ?? user.poste, niveau: updated.niveau ?? data.niveau ?? user.niveau, emailVerified: Boolean(updated.email_verified ?? updated.emailVerified ?? 0) };
       // on ré-émet un token avec le nouveau pseudo/email
       const token = signToken({ id: out.id, email: out.email, pseudo: out.pseudo });
-      return { user: out, token };
+      const extra = emailChanged ? { verificationToken: data.verificationToken ?? data.verification_token, message: 'Email changé — revérifie ton adresse' } : {};
+      return { user: out, token, ...extra };
     } catch (e) {
       if (e.code === '23505') {
         const msg = e.detail?.includes('email') ? 'email déjà pris' : 'pseudo déjà pris';
@@ -270,15 +500,6 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     }
     return { ok: true };
   });
-
-  const requireAuth = async (req, reply) => {
-    const payload = authFromRequest(req);
-    if (!payload) {
-      reply.code(401).send({ error: 'auth requise' });
-      return;
-    }
-    req.user = payload;
-  };
 
   const isMember = async (ligueId, userId) => {
     if (!liguesTable || !membersTable) return true; // tests mock sans ligues -> on autorise

@@ -68,5 +68,26 @@ services:
       - /app/node_modules
     restart: unless-stopped
 
+  # ── Drizzle Studio — DEV UNIQUEMENT, INTERDIT en prod !!! ──
+  # Ne jamais lancer en prod. Activé uniquement avec --profile dev
+  #   docker compose --profile dev up studio          -> https://local.drizzle.studio (tunnel) + http://localhost:4983 si dispo
+  #   docker compose --profile dev up -d && open https://local.drizzle.studio
+  # Host alternative: cd api && npm run db:studio:host   (utilise localhost)
+  #                   cd api && npm run db:studio        (utilise DATABASE_URL tel quel)
+  studio:
+    build: ./api
+    command: npx drizzle-kit studio --host 0.0.0.0 --port 4983 --verbose
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://babyfoot:babyfoot@db:5432/babyfoot}
+      NODE_ENV: development
+    ports:
+      - "${STUDIO_PORT:-4983}:4983"
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["dev", "tools"] # <- jamais démarré par défaut, jamais en prod
+    restart: "no"
+
 volumes:
   pgdata:

@@ -15,6 +15,11 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   poste: text('poste').notNull().$type(),
   niveau: text('niveau').notNull().$type(),
+  emailVerified: integer('email_verified').default(0),
+  verificationToken: text('verification_token'),
+  verificationExpires: timestamp('verification_expires', { withTimezone: true }),
+  resetToken: text('reset_token'),
+  resetExpires: timestamp('reset_expires', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 

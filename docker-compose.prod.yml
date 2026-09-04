@@ -1,0 +1,22 @@
+# docker-compose.prod.yml — PRODUCTION (INTERDIT Drizzle Studio)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# ⚠️ Ne JAMAIS inclure le profile "dev" ni le service "studio" en prod.
+# Studio expose toute la DB sans auth -> fuite données.
+services:
+  api:
+    command: npm start
+    environment:
+      NODE_ENV: production
+    restart: always
+  web:
+    command: npm start
+    environment:
+      NODE_ENV: production
+    restart: always
+  landing:
+    command: npm start
+    environment:
+      NODE_ENV: production
+    restart: always
+  # studio est volontairement ABSENT en prod
+  # Toute tentative de `docker compose --profile dev` en prod doit être bloquée par le déploiement.
