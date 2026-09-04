@@ -17,7 +17,7 @@ const isProd = appUrl.includes('app.');
     <!-- Hero -->
     <section class="mt-8 grid lg:grid-cols-2 gap-8 items-center">
       <div>
-        <span class="inline-block bg-amber-400 text-amber-950 text-xs font-black px-3 py-1 rounded-full">🏆 MVP • Mobile-first • Au bureau</span>
+        <span class="inline-block bg-amber-400 text-amber-950 text-xs font-black px-3 py-1 rounded-full">🏆 Mobile-first • Au bureau</span>
         <h1 class="mt-4 text-4xl lg:text-5xl font-black leading-[0.9] tracking-tight">
           La pause<br/>
           <span class="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">babyfoot</span><br/>
@@ -30,13 +30,12 @@ const isProd = appUrl.includes('app.');
           et suis tes <b>stats</b> en live.
         </p>
         <div class="mt-6 flex flex-wrap gap-3">
-          <a href={appUrl} class="bg-zinc-900 text-white px-6 py-3.5 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition flex items-center gap-2">
+          <a href={appUrl} class="bg-zinc-900 text-white px-6 py-3.5 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition">
             🚀 Lancer l'app
-            <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">{isProd ? 'app.babyfootauboulot.dev' : 'localhost:55174'}</span>
           </a>
           <a href={`${appUrl}/#inscription`} class="bg-white border-2 border-zinc-200 px-6 py-3.5 rounded-2xl font-bold hover:bg-zinc-50 transition">✨ S'inscrire</a>
         </div>
-        <p class="mt-3 text-xs text-zinc-500">Hébergé chez vous • Postgres + Fastify + React • <a href={appUrl} class="underline">app</a> séparée de la vitrine</p>
+        <p class="mt-3 text-xs text-zinc-500">Ligues privées • Invitation par code • Stats en direct</p>
       </div>
       <div class="relative">
         <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-zinc-100 p-4 rotate-1">
@@ -74,33 +73,32 @@ const isProd = appUrl.includes('app.');
     <!-- How -->
     <section class="mt-12 bg-white rounded-[2rem] border-2 border-zinc-100 p-6 grid md:grid-cols-3 gap-6">
       <div>
-        <p class="text-xs font-black tracking-widest text-emerald-600">01 — VITRINE</p>
-        <p class="font-bold">babyfootauboulot.dev</p>
-        <p class="text-sm text-zinc-600">Cette page Astro ultra-légère, SEO, qui présente et renvoie vers l'app.</p>
+        <p class="text-xs font-black tracking-widest text-emerald-600">01 — CRÉE</p>
+        <p class="font-bold">Ta ligue privée</p>
+        <p class="text-sm text-zinc-600">Crée ta ligue en 10s et partage le code d'invitation à tes collègues.</p>
       </div>
       <div>
-        <p class="text-xs font-black tracking-widest text-blue-600">02 — APP</p>
-        <p class="font-bold">app.babyfootauboulot.dev</p>
-        <p class="text-sm text-zinc-600">React + Vite (55174) + API Fastify (33333) + Postgres. Auth email/mdp.</p>
+        <p class="text-xs font-black tracking-widest text-blue-600">02 — JOUE</p>
+        <p class="font-bold">1v1 ou 2v2</p>
+        <p class="text-sm text-zinc-600">Choisis tes équipes, tirage au sort et enregistre le score.</p>
       </div>
       <div>
-        <p class="text-xs font-black tracking-widest text-amber-600">03 — HÉBERGEMENT</p>
-        <p class="font-bold">Chez vous</p>
-        <p class="text-sm text-zinc-600">Un <code>docker compose up</code>, Caddy en reverse proxy, HTTPS auto.</p>
+        <p class="text-xs font-black tracking-widest text-amber-600">03 — SUIS</p>
+        <p class="font-bold">Tes stats</p>
+        <p class="text-sm text-zinc-600">Classement, victoires et historique de tes matchs.</p>
       </div>
     </section>
 
     <section class="mt-8 bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-[2rem] p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         <p class="font-black text-lg">Prêt pour la revanche ?</p>
-        <p class="text-sm opacity-70">Auth MVP email + mot de passe — 6 caractères min, JWT 7j.</p>
+        <p class="text-sm opacity-70">Crée ton compte en 10s et lance ta première partie.</p>
       </div>
       <a href={appUrl} class="bg-white text-zinc-900 px-6 py-3 rounded-2xl font-black hover:scale-[1.02] transition">Ouvrir l'app →</a>
     </section>
   </main>
 
   <footer class="max-w-6xl mx-auto px-6 py-10 text-center text-xs text-zinc-500">
-    <p>© Babyfoot au boulot — vitrine Astro • app React • API Fastify • Postgres • Docker</p>
-    <p class="mt-1">Local : <a class="underline" href="http://localhost:55175">localhost:55175</a> (vitrine) → <a class="underline" href="http://localhost:55174">localhost:55174</a> (app) • Prod : babyfootauboulot.dev → app.babyfootauboulot.dev</p>
+    <p>© Babyfoot au boulot</p>
   </footer>
 </Layout>
