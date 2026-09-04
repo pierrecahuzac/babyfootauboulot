@@ -53,7 +53,7 @@ const Admin = ({ user, onBack }) => {
               <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{u.email} • {u.poste} • {u.niveau} {u.emailVerified?'• ✓':'• ✗'}</p>
             </div>
             <div className="flex gap-1 shrink-0">
-              {u.role==='user' ? <button onClick={()=>changeRole(u.id,'admin')} className="bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full text-xs font-bold">Promouvoir</button> : <button onClick={()=>changeRole(u.id,'user')} className="bg-zinc-100 dark:bg-zinc-700 border dark:border-zinc-600 dark:text-zinc-100 px-3 py-1 rounded-full text-xs font-bold">Rétrograder</button>}
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${u.role==='admin'?'bg-amber-400 text-amber-950':'bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-100 border dark:border-zinc-600'}`}>{u.role}</span>
               <button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Suppr</button>
             </div>
           </div>
