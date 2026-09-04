@@ -34,7 +34,8 @@ const Admin = ({ user, onBack }) => {
     load();
   };
   if (user?.role!=='admin') return <div className="p-8 text-center"><p className="font-black dark:text-zinc-100">🔒 Admin requis</p><p className="text-sm text-zinc-500 dark:text-zinc-400">Connecte-toi avec admin@example.com</p><button onClick={onBack} className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">← Retour</button></div>;
-  const filtered = users.filter(u => !filter || u.pseudo.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
+  const sorted = [...users].sort((a,b)=> (b.role==='admin') - (a.role==='admin'));
+  const filtered = sorted.filter(u => !filter || u.pseudo.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
   const flagged = users.filter(u => isBlocked(u.pseudo));
   return (
     <div className="space-y-4">
@@ -52,7 +53,7 @@ const Admin = ({ user, onBack }) => {
               <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{u.email} • {u.poste} • {u.niveau} {u.emailVerified?'• ✓':'• ✗'}</p>
             </div>
             <div className="flex gap-1 shrink-0">
-              {u.role==='user' ? <button onClick={()=>changeRole(u.id,'admin')} className="bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full text-xs font-bold">admin</button> : <button onClick={()=>changeRole(u.id,'user')} className="bg-zinc-100 dark:bg-zinc-700 border dark:border-zinc-600 dark:text-zinc-100 px-3 py-1 rounded-full text-xs font-bold">user</button>}
+              {u.role==='user' ? <button onClick={()=>changeRole(u.id,'admin')} className="bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full text-xs font-bold">Promouvoir</button> : <button onClick={()=>changeRole(u.id,'user')} className="bg-zinc-100 dark:bg-zinc-700 border dark:border-zinc-600 dark:text-zinc-100 px-3 py-1 rounded-full text-xs font-bold">Rétrograder</button>}
               <button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Suppr</button>
             </div>
           </div>
