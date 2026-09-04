@@ -1,0 +1,72 @@
+services:
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-babyfoot}
+      POSTGRES_USER: ${POSTGRES_USER:-babyfoot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-babyfoot}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-babyfoot}"]
+      interval: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    command: npm run dev
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://babyfoot:babyfoot@db:5432/babyfoot}
+      DATABASE_URL_TEST: ${DATABASE_URL_TEST:-postgres://babyfoot:babyfoot@db:5432/babyfoot_test}
+      PORT: ${PORT:-33333}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-prod-please-override}
+    # local only — pas de reverse proxy, API accessible sur http://localhost:33333 et http://192.168.1.181:33333
+    ports:
+      - "${PORT:-33333}:${PORT:-33333}"
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    command: npm run dev
+    env_file: .env
+    ports:
+      - "${WEB_PORT:-55174}:${WEB_PORT:-55174}"
+    environment:
+      # vide = fetch relatif /api -> proxy vite vers api, marche en localhost + LAN
+      VITE_API_URL: "${VITE_API_URL:-}"
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      WEB_PORT: "${WEB_PORT:-55174}"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  landing:
+    build: ./landing
+    command: npm run dev
+    env_file: .env
+    ports:
+      - "${LANDING_PORT:-55175}:${LANDING_PORT:-55175}"
+    environment:
+      PUBLIC_APP_URL: "${PUBLIC_APP_URL:-http://localhost:55174}"
+      LANDING_PORT: "${LANDING_PORT:-55175}"
+    volumes:
+      - ./landing:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,106 @@
+---
+import Layout from '../layouts/Layout.astro';
+const appUrl = import.meta.env.PUBLIC_APP_URL || 'http://localhost:55174';
+const isProd = appUrl.includes('app.');
+---
+
+<Layout title="Babyfoot au boulot — Organise tes parties">
+  <header class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">⚽</span>
+      <span class="font-black tracking-tight">BABYFOOT<span class="text-emerald-600">AUBOULOT.DEV</span></span>
+    </div>
+    <a href={appUrl} class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-2.5 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition">Ouvrir l'app →</a>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6">
+    <!-- Hero -->
+    <section class="mt-8 grid lg:grid-cols-2 gap-8 items-center">
+      <div>
+        <span class="inline-block bg-amber-400 text-amber-950 text-xs font-black px-3 py-1 rounded-full">🏆 MVP • Mobile-first • Au bureau</span>
+        <h1 class="mt-4 text-4xl lg:text-5xl font-black leading-[0.9] tracking-tight">
+          La pause<br/>
+          <span class="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">babyfoot</span><br/>
+          qui soude l'équipe
+        </h1>
+        <p class="mt-4 text-zinc-600 leading-relaxed">
+          Inscris ton équipe en 10s, lance un <b>1v1</b> ou <b>2v2</b>, laisse le <b>tirage aléatoire</b> mixer les postes
+          <span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs font-black">Attaque</span>
+          <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full text-xs font-black">Défense</span>
+          et suis tes <b>stats</b> en live.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href={appUrl} class="bg-zinc-900 text-white px-6 py-3.5 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition flex items-center gap-2">
+            🚀 Lancer l'app
+            <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">{isProd ? 'app.babyfootauboulot.dev' : 'localhost:55174'}</span>
+          </a>
+          <a href={`${appUrl}/#inscription`} class="bg-white border-2 border-zinc-200 px-6 py-3.5 rounded-2xl font-bold hover:bg-zinc-50 transition">✨ S'inscrire</a>
+        </div>
+        <p class="mt-3 text-xs text-zinc-500">Hébergé chez vous • Postgres + Fastify + React • <a href={appUrl} class="underline">app</a> séparée de la vitrine</p>
+      </div>
+      <div class="relative">
+        <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-zinc-100 p-4 rotate-1">
+          <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white">
+            <p class="font-black">Prêt à jouer ?</p>
+            <p class="text-sm opacity-90">Tirage aléatoire 2v2 en 1 clic</p>
+            <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div class="bg-white text-emerald-700 p-3 rounded-2xl font-bold">💙 Bleue<br/><span class="text-xs font-medium">pierre_j ⚡ + sarah_l 🛡️</span></div>
+              <div class="bg-white/20 border border-white/30 p-3 rounded-2xl font-bold">❤️ Rouge<br/><span class="text-xs">tom_m ⚡ + lucas 🛡️</span></div>
+            </div>
+          </div>
+          <div class="mt-3 bg-zinc-50 rounded-2xl p-3 flex justify-between text-sm font-bold">
+            <span>Classement</span><span class="bg-amber-400 px-2 py-0.5 rounded-full">🥇 pierre_j 3V</span>
+          </div>
+        </div>
+        <div class="absolute -z-10 -bottom-6 -right-6 w-full h-full bg-gradient-to-br from-amber-200 to-orange-200 rounded-[2rem] rotate-2"></div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="mt-16 grid md:grid-cols-3 gap-4">
+      {[
+        { icon: '⚔️', title: '1v1 / 2v2', desc: 'Choisis le format, chaque liste = un poste (Attaque/Défense).', color: 'from-blue-500 to-cyan-500' },
+        { icon: '🎲', title: 'Tirage aléatoire', desc: 'Mélange distinct, pas deux fois le même joueur. Parfait pour mixer.', color: 'from-amber-500 to-orange-500' },
+        { icon: '📊', title: 'Stats live', desc: 'Victoires, défaites, ratio, classement auto. Historique des matchs.', color: 'from-violet-500 to-purple-500' },
+      ].map(f => (
+        <div class="bg-white rounded-3xl p-5 border-2 border-zinc-100 shadow-sm">
+          <div class={`w-10 h-10 rounded-2xl bg-gradient-to-br ${f.color} text-white flex items-center justify-center`}>{f.icon}</div>
+          <h3 class="mt-3 font-black">{f.title}</h3>
+          <p class="text-sm text-zinc-600 mt-1">{f.desc}</p>
+        </div>
+      ))}
+    </section>
+
+    <!-- How -->
+    <section class="mt-12 bg-white rounded-[2rem] border-2 border-zinc-100 p-6 grid md:grid-cols-3 gap-6">
+      <div>
+        <p class="text-xs font-black tracking-widest text-emerald-600">01 — VITRINE</p>
+        <p class="font-bold">babyfootauboulot.dev</p>
+        <p class="text-sm text-zinc-600">Cette page Astro ultra-légère, SEO, qui présente et renvoie vers l'app.</p>
+      </div>
+      <div>
+        <p class="text-xs font-black tracking-widest text-blue-600">02 — APP</p>
+        <p class="font-bold">app.babyfootauboulot.dev</p>
+        <p class="text-sm text-zinc-600">React + Vite (55174) + API Fastify (33333) + Postgres. Auth email/mdp.</p>
+      </div>
+      <div>
+        <p class="text-xs font-black tracking-widest text-amber-600">03 — HÉBERGEMENT</p>
+        <p class="font-bold">Chez vous</p>
+        <p class="text-sm text-zinc-600">Un <code>docker compose up</code>, Caddy en reverse proxy, HTTPS auto.</p>
+      </div>
+    </section>
+
+    <section class="mt-8 bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-[2rem] p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <p class="font-black text-lg">Prêt pour la revanche ?</p>
+        <p class="text-sm opacity-70">Auth MVP email + mot de passe — 6 caractères min, JWT 7j.</p>
+      </div>
+      <a href={appUrl} class="bg-white text-zinc-900 px-6 py-3 rounded-2xl font-black hover:scale-[1.02] transition">Ouvrir l'app →</a>
+    </section>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-6 py-10 text-center text-xs text-zinc-500">
+    <p>© Babyfoot au boulot — vitrine Astro • app React • API Fastify • Postgres • Docker</p>
+    <p class="mt-1">Local : <a class="underline" href="http://localhost:55175">localhost:55175</a> (vitrine) → <a class="underline" href="http://localhost:55174">localhost:55174</a> (app) • Prod : babyfootauboulot.dev → app.babyfootauboulot.dev</p>
+  </footer>
+</Layout>

@@ -1,0 +1,28 @@
+{
+  "name": "babyfoot-api",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run src/utils",
+    "test:integration": "vitest run tests/integration",
+    "test:integration:real": "vitest run tests/integration/app.real.integration.test.js",
+    "test:integration:mock": "vitest run tests/integration/app.integration.test.js",
+    "test:e2e": "RUN_E2E=1 vitest run tests/e2e",
+    "test:db:setup": "node -e \"import pg from 'pg'; const p=new pg.Pool({connectionString: process.env.DATABASE_URL_TEST || 'postgres://babyfoot:babyfoot@localhost:5432/postgres'}); p.query('CREATE DATABASE babyfoot_test').then(()=>console.log('test DB créée')).catch(e=>console.log(e.message)).finally(()=>p.end())\""
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.38.0",
+    "fastify": "^5.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0",
+    "vitest": "^3.2.7"
+  }
+}

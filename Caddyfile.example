@@ -1,0 +1,36 @@
+# À ajouter à ton Caddy existant (déjà en place sur le serveur)
+# Hypothèse : Caddy est hors docker-compose mais sur le même host
+# Landing Astro (55175) + App Vite (55174) + API Fastify (33333)
+
+# Vitrine publique — Astro
+babyfootauboulot.dev {
+  reverse_proxy localhost:55175
+  encode gzip
+}
+
+# App — React + API
+app.babyfootauboulot.dev {
+  # App Vite (ou dist buildé)
+  handle {
+    reverse_proxy localhost:55174
+  }
+  # API -> Fastify
+  handle /api/* {
+    reverse_proxy localhost:33333
+  }
+  encode gzip
+}
+
+# --- Legacy single domain (si tu gardes tout sur un seul domaine) ---
+# babyfoot.ton-domaine.fr {
+#   root * /home/thaliios/Dev/Babyfoot/web/dist
+#   file_server
+#   try_files {path} /index.html
+#   handle /api/* { reverse_proxy localhost:33333 }
+#   encode gzip
+# }
+
+# En local sans domaine, teste avec :
+# :55175 -> landing Astro
+# :55174 -> app Vite
+# :33333 -> API

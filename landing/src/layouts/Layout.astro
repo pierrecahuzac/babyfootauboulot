@@ -1,0 +1,20 @@
+---
+interface Props { title?: string }
+const { title = "Babyfoot au boulot — La pause qui soude" } = Astro.props;
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content="App mobile-first pour organiser les parties de babyfoot au bureau : joueurs, matchs 1v1/2v2, random, stats." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
+    <style>
+      @import "tailwindcss";
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-amber-50 via-lime-50 to-emerald-50 text-zinc-900 antialiased">
+    <slot />
+  </body>
+</html>

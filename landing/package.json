@@ -1,0 +1,16 @@
+{
+  "name": "babyfoot-landing",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0 --port 55175",
+    "build": "astro build",
+    "preview": "astro preview --host 0.0.0.0 --port 55175"
+  },
+  "dependencies": {
+    "astro": "^5.13.5"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.1.12",
+    "@tailwindcss/vite": "^4.1.12"
+  }
+}
