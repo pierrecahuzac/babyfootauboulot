@@ -20,7 +20,7 @@ const App = () => {
     const v = localStorage.getItem('babyfoot_ligue_id');
     return v ? Number(v) : null;
   });
-  const [theme, setTheme] = useState(() => localStorage.getItem('babyfoot_theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('babyfoot_theme') || 'dark');
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('babyfoot_theme', theme);
