@@ -70,7 +70,8 @@ services:
 
   # ── Drizzle Studio — DEV UNIQUEMENT, INTERDIT en prod !!! ──
   # Ne jamais lancer en prod. Activé uniquement avec --profile dev
-  #   docker compose --profile dev up studio          -> https://local.drizzle.studio (tunnel) + http://localhost:4983 si dispo
+  # Drizzle Kit 0.30+ utilise https://local.drizzle.studio (tunnel) — http://localhost:4983 renvoie 404 c'est normal
+  #   docker compose --profile dev up studio          -> ouvrir https://local.drizzle.studio
   #   docker compose --profile dev up -d && open https://local.drizzle.studio
   # Host alternative: cd api && npm run db:studio:host   (utilise localhost)
   #                   cd api && npm run db:studio        (utilise DATABASE_URL tel quel)
