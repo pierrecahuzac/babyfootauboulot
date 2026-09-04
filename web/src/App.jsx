@@ -20,6 +20,12 @@ const App = () => {
     const v = localStorage.getItem('babyfoot_ligue_id');
     return v ? Number(v) : null;
   });
+  const [theme, setTheme] = useState(() => localStorage.getItem('babyfoot_theme') || 'light');
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('babyfoot_theme', theme);
+  }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   const refresh = async (ligueId = currentLigue) => {
     const q = ligueId ? `?ligue_id=${ligueId}` : '';
@@ -93,9 +99,9 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-lime-50 to-emerald-100">
-      <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl flex flex-col relative">
-        <header className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white p-5 flex justify-between items-center shadow-lg">
+    <div className={`min-h-screen bg-gradient-to-br from-amber-100 via-lime-50 to-emerald-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900 ${theme==='dark' ? 'dark' : ''}`}>
+      <div className="max-w-md mx-auto min-h-screen bg-white dark:bg-zinc-900 shadow-2xl flex flex-col relative dark:text-zinc-100">
+        <header className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 dark:from-zinc-800 dark:via-zinc-800 dark:to-zinc-800 text-white p-5 flex justify-between items-center shadow-lg">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('accueil')}>
             <span className="text-2xl">⚽</span>
             <div>
@@ -104,15 +110,16 @@ const App = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={toggleTheme} className="w-8 h-8 rounded-full bg-white/20 dark:bg-zinc-700 backdrop-blur flex items-center justify-center text-sm" title={theme==='dark' ? 'Passer en clair' : 'Passer en sombre'}>{theme==='dark' ? '☀️' : '🌙'}</button>
             {user ? (
               <>
                 <span className="text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-full font-bold hidden sm:inline">{user.pseudo}</span>
-                <button onClick={logout} className="text-xs bg-white text-emerald-700 px-3 py-1 rounded-full font-bold shadow">Sortir</button>
+                <button onClick={logout} className="text-xs bg-white text-emerald-700 dark:text-zinc-900 px-3 py-1 rounded-full font-bold shadow dark:bg-zinc-800">Sortir</button>
               </>
             ) : (
               <>
                 <button onClick={() => setView('login')} className="text-xs bg-white/20 backdrop-blur px-3 py-1 rounded-full font-bold">Connexion</button>
-                <button onClick={() => setView('register')} className="text-xs bg-white text-emerald-700 px-3 py-1 rounded-full font-bold shadow">Créer compte</button>
+                <button onClick={() => setView('register')} className="text-xs bg-white text-emerald-700 dark:text-zinc-900 px-3 py-1 rounded-full font-bold shadow dark:bg-zinc-800">Créer compte</button>
               </>
             )}
           </div>
@@ -126,17 +133,17 @@ const App = () => {
           </div>
         )}
         {user && (
-          <div className="px-5 py-2 bg-white border-b flex items-center gap-2 text-xs">
-            <span className="font-black text-zinc-600">🏆 Ligue</span>
-            <select value={currentLigue || ''} onChange={e=>selectLigue(e.target.value)} className="flex-1 border-2 border-zinc-200 rounded-xl px-2 py-1 bg-white font-bold">
+          <div className="px-5 py-2 bg-white dark:bg-zinc-800 border-b dark:border-zinc-700 flex items-center gap-2 text-xs">
+            <span className="font-black text-zinc-600 dark:text-zinc-300">🏆 Ligue</span>
+            <select value={currentLigue || ''} onChange={e=>selectLigue(e.target.value)} className="flex-1 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl px-2 py-1 bg-white dark:bg-zinc-900 font-bold dark:text-zinc-100">
               <option value="">— choisir —</option>
               {ligues.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
-            <button onClick={()=>setView('ligues')} className="bg-zinc-900 text-white px-3 py-1 rounded-full font-bold">Gérer</button>
+            <button onClick={()=>setView('ligues')} className="bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full font-bold">Gérer</button>
           </div>
         )}
 
-        <main className="p-5 flex-1 pb-20 bg-gradient-to-b from-white to-zinc-50">
+        <main className="p-5 flex-1 pb-20 bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-800">
           {view === 'accueil' && <Accueil players={players} onNav={setView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>setView('ligues')} />}
           {view === 'inscription' && <Inscription onDone={() => { refresh(); setView('accueil'); }} onBack={() => setView('accueil')} />}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('login')} />}
@@ -150,7 +157,7 @@ const App = () => {
           {view === 'stats' && <Stats classement={stats} matches={matches} />}
         </main>
 
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white/90 backdrop-blur border-t border-zinc-200 flex shadow-[0_-8px_24px_rgba(0,0,0,0.08)] rounded-t-2xl overflow-hidden">
+        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur border-t border-zinc-200 dark:border-zinc-700 flex shadow-[0_-8px_24px_rgba(0,0,0,0.08)] rounded-t-2xl overflow-hidden">
           {[
             { id: 'accueil', label: 'Accueil', icon: '🏠' },
             { id: 'match', label: 'Match', icon: '⚔️' },
@@ -159,7 +166,7 @@ const App = () => {
             <button
               key={tab.id}
               onClick={() => setView(tab.id)}
-              className={`flex-1 py-3.5 text-sm flex flex-col items-center gap-0.5 transition-all ${view===tab.id ? 'bg-gradient-to-b from-emerald-500 to-teal-600 text-white font-bold shadow-inner' : 'text-zinc-500 hover:bg-zinc-50'}`}
+              className={`flex-1 py-3.5 text-sm flex flex-col items-center gap-0.5 transition-all ${view===tab.id ? 'bg-gradient-to-b from-emerald-500 to-teal-600 text-white font-bold shadow-inner' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
             >
               <span className="text-base leading-none">{tab.icon}</span>
               <span className="text-[11px]">{tab.label}</span>
@@ -186,7 +193,7 @@ const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
                 <span className="opacity-80">Code privé :</span>
                 {showCode ? (
                   <>
-                    <span className="bg-white text-violet-700 px-2 py-0.5 rounded-full font-mono font-black tracking-widest">{ligue.invite_code || ligue.inviteCode}</span>
+                    <span className="bg-white text-violet-700 px-2 py-0.5 rounded-full font-mono font-black tracking-widest dark:bg-zinc-800">{ligue.invite_code || ligue.inviteCode}</span>
                     <button onClick={() => { navigator.clipboard?.writeText(ligue.invite_code || ligue.inviteCode); }} className="bg-white/20 backdrop-blur px-2 py-0.5 rounded-full font-bold">Copier</button>
                     <button onClick={() => setShowCode(false)} className="opacity-60">Masquer</button>
                   </>
@@ -212,7 +219,7 @@ const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
         <h2 className="font-black text-lg leading-tight">Prêt à jouer ?</h2>
         <p className="text-sm opacity-90 mt-1">Lance une partie, défie tes collègues !</p>
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <button onClick={() => onNav('match')} className="bg-white text-emerald-700 py-3 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-1">
+          <button onClick={() => onNav('match')} className="bg-white text-emerald-700 py-3 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition flex items-center justify-center gap-1 dark:bg-zinc-800">
             <span>⚔️</span> Créer un match
           </button>
           <button onClick={() => onNav('stats')} className="bg-emerald-900/20 backdrop-blur text-white border border-white/30 py-3 rounded-2xl font-bold hover:bg-white/20 transition">
@@ -228,7 +235,7 @@ const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
             <p className="text-xs text-amber-800">Crée ton compte pour jouer, ton pseudo est réservé.</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => onNav('login')} className="flex-1 bg-white border-2 border-amber-300 py-2.5 px-4 rounded-2xl font-bold text-amber-900">Connexion</button>
+            <button onClick={() => onNav('login')} className="flex-1 bg-white border-2 border-amber-300 py-2.5 px-4 rounded-2xl font-bold text-amber-900 dark:bg-zinc-800 dark:text-zinc-100">Connexion</button>
             <button onClick={() => onNav('register')} className="flex-1 bg-gradient-to-r from-amber-400 to-orange-400 py-2.5 px-4 rounded-2xl font-black text-amber-950">Créer compte</button>
           </div>
         </div>
@@ -236,31 +243,31 @@ const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
         <button onClick={() => onNav('match')} className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-3 rounded-2xl font-black shadow">⚔️ Nouveau match en tant que {user.pseudo}</button>
       )}
 
-      <button onClick={() => onNav('inscription')} className="w-full bg-zinc-100 py-2.5 rounded-2xl text-sm font-bold border-2 border-zinc-200">👤 + Ajouter un joueur invité (sans compte)</button>
+      <button onClick={() => onNav('inscription')} className="w-full bg-zinc-100 py-2.5 rounded-2xl text-sm font-bold border-2 border-zinc-200 dark:bg-zinc-700 dark:border-zinc-700 dark:text-zinc-100 dark:bg-zinc-800">👤 + Ajouter un joueur invité (sans compte)</button>
 
       <div className="flex items-center justify-between">
-        <h2 className="font-black text-zinc-800 flex items-center gap-2">
+        <h2 className="font-black text-zinc-800 flex items-center gap-2 dark:text-zinc-100">
           <span className="w-1 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
           Joueurs inscrits
-          <span className="bg-zinc-900 text-white text-xs px-2 py-0.5 rounded-full">{players.length}</span>
+          <span className="bg-zinc-900 text-white text-xs px-2 py-0.5 rounded-full dark:bg-zinc-700">{players.length}</span>
         </h2>
       </div>
 
-      <div className="border-2 border-zinc-100 rounded-3xl overflow-hidden bg-white shadow-sm divide-y divide-zinc-100">
+      <div className="border-2 border-zinc-100 rounded-3xl overflow-hidden bg-white shadow-sm divide-y divide-zinc-100 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
         {players.length === 0 && (
           <div className="p-8 text-center">
             <div className="text-4xl mb-2">🤸</div>
-            <p className="text-sm text-zinc-500 font-medium">Aucun joueur pour le moment</p>
-            <p className="text-xs text-zinc-400">Crée ton compte !</p>
+            <p className="text-sm text-zinc-500 font-medium dark:text-zinc-400">Aucun joueur pour le moment</p>
+            <p className="text-xs text-zinc-400 dark:text-zinc-400">Crée ton compte !</p>
           </div>
         )}
         {players.map(p => (
-          <div key={p.id} className="p-3.5 flex items-center gap-3 hover:bg-zinc-50 transition text-sm">
+          <div key={p.id} className="p-3.5 flex items-center gap-3 hover:bg-zinc-50 transition text-sm dark:hover:bg-zinc-800">
             <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${avatarBg(p.pseudo)} text-white flex items-center justify-center font-black text-xs shadow`}>
               {initials(p.pseudo)}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-zinc-900 truncate">{p.pseudo}</div>
+              <div className="font-bold text-zinc-900 truncate dark:text-zinc-100">{p.pseudo}</div>
               <div className="flex gap-1.5 mt-1">
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border font-bold ${posteColor(p.poste)}`}>{p.poste}</span>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${niveauColor(p.niveau)}`}>{p.niveau}</span>
@@ -298,26 +305,26 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
       <div className="text-center">
         <div className="text-4xl">🚀</div>
         <h2 className="font-black text-xl">Créer ton compte</h2>
-        <p className="text-sm text-zinc-500">Email + mot de passe (6+ caractères)</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Email + mot de passe (6+ caractères)</p>
       </div>
       <label className="block text-sm font-bold">Email
-        <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none" required />
+        <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
       </label>
       <label className="block text-sm font-bold">Pseudo
-        <input value={pseudo} onChange={e=>setPseudo(e.target.value)} placeholder="ex. pierre_j" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none" required />
+        <input value={pseudo} onChange={e=>setPseudo(e.target.value)} placeholder="ex. pierre_j" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
       </label>
       <label className="block text-sm font-bold">Mot de passe
-        <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none" required />
+        <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
       </label>
       <div className="text-sm font-bold">Poste
         <div className="flex gap-2 mt-1">
           {['Défense','Attaque','Les 2'].map(v => (
-            <button type="button" key={v} onClick={()=>setPoste(v)} className={`flex-1 py-2.5 rounded-2xl border-2 font-black ${poste===v?'bg-emerald-500 text-white border-emerald-600':'bg-white border-zinc-200'}`}>{v}</button>
+            <button type="button" key={v} onClick={()=>setPoste(v)} className={`flex-1 py-2.5 rounded-2xl border-2 font-black ${poste===v?'bg-emerald-500 text-white border-emerald-600':'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100'}`}>{v}</button>
           ))}
         </div>
       </div>
       <label className="block text-sm font-bold">Niveau
-        <select value={niveau} onChange={e=>setNiveau(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 bg-white">
+        <select value={niveau} onChange={e=>setNiveau(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
           <option value="Débutant">Débutant 🌱</option><option value="Intermédiaire">Intermédiaire ⚡</option><option value="Confirmé">Confirmé 🔥</option>
         </select>
       </label>
@@ -325,7 +332,7 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
       {info && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {info}</p>}
       <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-2xl font-black shadow-xl">Créer mon compte</button>
       <p className="text-center text-sm">Déjà un compte ? <button type="button" onClick={onSwitch} className="font-black text-emerald-600 underline">Connexion</button></p>
-      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
     </form>
   );
 };
@@ -352,19 +359,19 @@ const Login = ({ onAuth, onBack, onSwitch, onForgot }) => {
       <div className="text-center">
         <div className="text-4xl">🔑</div>
         <h2 className="font-black text-xl">Connexion</h2>
-        <p className="text-sm text-zinc-500">Email + mot de passe</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Email + mot de passe</p>
       </div>
       <label className="block text-sm font-bold">Email
-        <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none" required />
+        <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
       </label>
       <label className="block text-sm font-bold">Mot de passe
-        <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none" required />
+        <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
       </label>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
-      <button type="submit" className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black shadow-xl">Se connecter</button>
+      <button type="submit" className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black shadow-xl dark:bg-zinc-700">Se connecter</button>
       <p className="text-center text-sm">Pas de compte ? <button type="button" onClick={onSwitch} className="font-black text-emerald-600 underline">Créer</button></p>
       <p className="text-center text-sm"><button type="button" onClick={onForgot} className="text-emerald-600 underline">Mot de passe oublié ?</button></p>
-      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
     </form>
   );
 };
@@ -387,13 +394,13 @@ const Forgot = ({ onBack, onReset }) => {
   };
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="text-center"><div className="text-4xl">📧</div><h2 className="font-black text-xl">Mot de passe oublié</h2><p className="text-sm text-zinc-500">Entre ton email</p></div>
-      <label className="block text-sm font-bold">Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3" required /></label>
+      <div className="text-center"><div className="text-4xl">📧</div><h2 className="font-black text-xl">Mot de passe oublié</h2><p className="text-sm text-zinc-500 dark:text-zinc-400">Entre ton email</p></div>
+      <label className="block text-sm font-bold">Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required /></label>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
       {token && <button type="button" onClick={()=>onReset(token)} className="w-full bg-amber-500 text-white py-3 rounded-2xl font-black">Aller au reset →</button>}
-      <button className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black">Envoyer</button>
-      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour connexion</button>
+      <button className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black dark:bg-zinc-700">Envoyer</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour connexion</button>
     </form>
   );
 };
@@ -414,13 +421,13 @@ const Reset = ({ onBack, onDone }) => {
   };
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="text-center"><div className="text-4xl">🔐</div><h2 className="font-black text-xl">Réinitialiser</h2><p className="text-sm text-zinc-500">Token + nouveau mdp (6+)</p></div>
-      <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="colle le token" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs" required /></label>
-      <label className="block text-sm font-bold">Nouveau mot de passe<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3" required /></label>
+      <div className="text-center"><div className="text-4xl">🔐</div><h2 className="font-black text-xl">Réinitialiser</h2><p className="text-sm text-zinc-500 dark:text-zinc-400">Token + nouveau mdp (6+)</p></div>
+      <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="colle le token" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required /></label>
+      <label className="block text-sm font-bold">Nouveau mot de passe<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required /></label>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
       <button className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black">Réinitialiser</button>
-      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
     </form>
   );
 };
@@ -449,19 +456,19 @@ const VerifyEmail = ({ user, onBack, onVerified }) => {
   };
   return (
     <div className="space-y-4">
-      <div className="text-center"><div className="text-4xl">✉️</div><h2 className="font-black text-xl">Vérifier ton email</h2><p className="text-sm text-zinc-500">Colle le token reçu (dev: renvoyé à l'inscription)</p></div>
+      <div className="text-center"><div className="text-4xl">✉️</div><h2 className="font-black text-xl">Vérifier ton email</h2><p className="text-sm text-zinc-500 dark:text-zinc-400">Colle le token reçu (dev: renvoyé à l'inscription)</p></div>
       <form onSubmit={submit} className="space-y-3">
-        <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="token 64 hex" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs" required /></label>
+        <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="token 64 hex" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required /></label>
         {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
         {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
         <button className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black">Vérifier</button>
       </form>
-      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 space-y-2">
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 space-y-2 dark:bg-zinc-800 dark:text-zinc-100">
         <p className="text-sm font-black">Pas reçu ?</p>
-        <label className="block text-sm">Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2" placeholder="toi@exemple.com" /></label>
+        <label className="block text-sm">Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" placeholder="toi@exemple.com" /></label>
         <button onClick={resend} className="w-full bg-amber-500 text-white py-3 rounded-2xl font-black">Renvoyer</button>
       </div>
-      <button onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
+      <button onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
     </div>
   );
 };
@@ -498,13 +505,13 @@ const Ligues = ({ ligues, currentLigue, onSelect, onRefresh, user }) => {
     onSelect(b.id);
   };
 
-  if (!user) return <div className="text-center p-8"><p className="font-black">🔒 Connecte-toi d'abord</p><p className="text-sm text-zinc-500">Crée un compte email+mdp pour gérer tes ligues privées.</p></div>;
+  if (!user) return <div className="text-center p-8"><p className="font-black">🔒 Connecte-toi d'abord</p><p className="text-sm text-zinc-500 dark:text-zinc-400">Crée un compte email+mdp pour gérer tes ligues privées.</p></div>;
 
   return (
     <div className="space-y-6">
       <h2 className="font-black text-xl flex items-center gap-2">🏆 Mes ligues privées</h2>
-      <p className="text-sm text-zinc-600">Chaque ligue est <b>isolée</b>. Invite par code donné en main propre / email / WhatsApp. Pas de liste publique.</p>
-      {ligues.length===0 && <p className="text-sm text-zinc-500 bg-zinc-50 border-2 border-zinc-100 p-4 rounded-2xl">Aucune ligue — crée la première !</p>}
+      <p className="text-sm text-zinc-600 dark:text-zinc-300">Chaque ligue est <b>isolée</b>. Invite par code donné en main propre / email / WhatsApp. Pas de liste publique.</p>
+      {ligues.length===0 && <p className="text-sm text-zinc-500 bg-zinc-50 border-2 border-zinc-100 p-4 rounded-2xl dark:text-zinc-400 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">Aucune ligue — crée la première !</p>}
       <div className="space-y-2">
         {ligues.map(l=> {
           const codeVal = l.invite_code || l.inviteCode;
@@ -513,16 +520,16 @@ const Ligues = ({ ligues, currentLigue, onSelect, onRefresh, user }) => {
           <div key={l.id} className={`p-4 rounded-3xl border-2 flex justify-between items-center ${Number(currentLigue)===Number(l.id) ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-zinc-100'}`}>
             <div className="flex-1 min-w-0">
               <p className="font-black truncate">{l.name}</p>
-              <p className="text-xs text-zinc-500 truncate">{l.description || '—'} • {l.slug}</p>
+              <p className="text-xs text-zinc-500 truncate dark:text-zinc-400">{l.description || '—'} • {l.slug}</p>
               <div className="mt-1 flex items-center gap-2">
                 {isVisible ? (
                   <>
-                    <span className="text-xs font-mono bg-zinc-900 text-white px-2 py-0.5 rounded-full tracking-widest">{codeVal}</span>
-                    <button onClick={() => { navigator.clipboard?.writeText(codeVal); }} className="text-xs bg-zinc-100 px-2 py-0.5 rounded-full font-bold">Copier</button>
-                    <button onClick={() => setVisibleCode(null)} className="text-xs text-zinc-500">Masquer</button>
+                    <span className="text-xs font-mono bg-zinc-900 text-white px-2 py-0.5 rounded-full tracking-widest dark:bg-zinc-700">{codeVal}</span>
+                    <button onClick={() => { navigator.clipboard?.writeText(codeVal); }} className="text-xs bg-zinc-100 px-2 py-0.5 rounded-full font-bold dark:bg-zinc-700">Copier</button>
+                    <button onClick={() => setVisibleCode(null)} className="text-xs text-zinc-500 dark:text-zinc-400">Masquer</button>
                   </>
                 ) : (
-                  <button onClick={() => setVisibleCode(l.id)} className="text-xs bg-zinc-900 text-white px-2 py-0.5 rounded-full font-bold">👁️ Voir code</button>
+                  <button onClick={() => setVisibleCode(l.id)} className="text-xs bg-zinc-900 text-white px-2 py-0.5 rounded-full font-bold dark:bg-zinc-700">👁️ Voir code</button>
                 )}
               </div>
             </div>
@@ -530,23 +537,23 @@ const Ligues = ({ ligues, currentLigue, onSelect, onRefresh, user }) => {
           </div>
         )})}
       </div>
-      <form onSubmit={create} className="bg-white border-2 border-zinc-100 rounded-3xl p-4 space-y-3">
+      <form onSubmit={create} className="bg-white border-2 border-zinc-100 rounded-3xl p-4 space-y-3 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
         <h3 className="font-black">➕ Créer une ligue privée</h3>
-        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Boulot - Étage 3" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3" required />
-        <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Description (optionnel)" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3" />
+        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Boulot - Étage 3" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
+        <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Description (optionnel)" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
         <button className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-3 rounded-2xl font-black">Créer + devenir owner</button>
       </form>
       <form onSubmit={join} className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-4 space-y-3">
         <h3 className="font-black">🔑 Rejoindre avec un code</h3>
         <p className="text-xs text-amber-800">Demande le code à ton collègue (6 caractères, ex: A3K9P2)</p>
         <div className="flex gap-2">
-          <input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="CODE" className="flex-1 border-2 border-amber-300 rounded-2xl px-4 py-3 font-mono font-black tracking-widest text-center" maxLength={6} required />
+          <input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="CODE" className="flex-1 border-2 border-amber-300 rounded-2xl px-4 py-3 font-mono font-black tracking-widest text-center dark:bg-zinc-800 dark:text-zinc-100" maxLength={6} required />
           <button className="bg-amber-500 text-white px-6 rounded-2xl font-black">Rejoindre</button>
         </div>
       </form>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
-      <p className="text-xs text-zinc-500">🔒 Privé : personne ne trouve ta ligue sans le code. Le créateur reste owner.</p>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">🔒 Privé : personne ne trouve ta ligue sans le code. Le créateur reste owner.</p>
     </div>
   );
 };
@@ -602,24 +609,24 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
     window.location.reload();
   };
 
-  if (!user) return <p className="text-sm text-zinc-500">Non connecté</p>;
+  if (!user) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Non connecté</p>;
 
   return (
     <div className="space-y-6">
       <h2 className="font-black text-xl flex items-center gap-2">👤 Mon profil</h2>
 
-      <div className="bg-white border-2 border-zinc-100 rounded-3xl p-4 space-y-3">
+      <div className="bg-white border-2 border-zinc-100 rounded-3xl p-4 space-y-3 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
         <p className="font-black text-sm">Infos</p>
-        <div className="text-xs text-zinc-600 space-y-1">
+        <div className="text-xs text-zinc-600 space-y-1 dark:text-zinc-300">
           <p><span className="font-bold">ID:</span> {user.id}</p>
           <p><span className="font-bold">Créé:</span> {new Date(user.created_at || user.createdAt).toLocaleDateString()}</p>
         </div>
         <form onSubmit={saveProfile} className="space-y-3">
           <label className="block text-sm font-bold">Email
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2" required />
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
           </label>
           <label className="block text-sm font-bold">Pseudo
-            <input value={pseudo} onChange={e=>setPseudo(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2" required />
+            <input value={pseudo} onChange={e=>setPseudo(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
           </label>
           <div className="text-sm font-bold">Poste
             <div className="flex gap-2 mt-1">
@@ -629,7 +636,7 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
             </div>
           </div>
           <label className="block text-sm font-bold">Niveau
-            <select value={niveau} onChange={e=>setNiveau(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 bg-white">
+            <select value={niveau} onChange={e=>setNiveau(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
               <option value="Débutant">Débutant 🌱</option><option value="Intermédiaire">Intermédiaire ⚡</option><option value="Confirmé">Confirmé 🔥</option>
             </select>
           </label>
@@ -637,25 +644,25 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
         </form>
       </div>
 
-      <div className="bg-white border-2 border-zinc-100 rounded-3xl p-4 space-y-3">
+      <div className="bg-white border-2 border-zinc-100 rounded-3xl p-4 space-y-3 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
         <p className="font-black text-sm">🔑 Changer mot de passe</p>
         <form onSubmit={changePwd} className="space-y-3">
-          <input type="password" value={oldPassword} onChange={e=>setOldPassword(e.target.value)} placeholder="Ancien mot de passe" className="w-full border-2 border-zinc-200 rounded-2xl px-3 py-2" required />
-          <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nouveau (6+)" className="w-full border-2 border-zinc-200 rounded-2xl px-3 py-2" required />
-          <button className="w-full bg-zinc-900 text-white py-3 rounded-2xl font-black">Changer</button>
+          <input type="password" value={oldPassword} onChange={e=>setOldPassword(e.target.value)} placeholder="Ancien mot de passe" className="w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
+          <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nouveau (6+)" className="w-full border-2 border-zinc-200 rounded-2xl px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
+          <button className="w-full bg-zinc-900 text-white py-3 rounded-2xl font-black dark:bg-zinc-700">Changer</button>
         </form>
       </div>
 
-      <div className="bg-white border-2 border-zinc-100 rounded-3xl p-4">
+      <div className="bg-white border-2 border-zinc-100 rounded-3xl p-4 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
         <p className="font-black text-sm">🏆 Mes ligues ({ligues.length})</p>
         <div className="mt-2 space-y-2">
           {ligues.map(l=> (
             <div key={l.id} className="flex justify-between items-center text-sm border rounded-xl px-3 py-2">
               <span className="font-bold truncate">{l.name}</span>
-              <span className="text-xs font-mono bg-zinc-900 text-white px-2 py-0.5 rounded-full">{l.invite_code || l.inviteCode}</span>
+              <span className="text-xs font-mono bg-zinc-900 text-white px-2 py-0.5 rounded-full dark:bg-zinc-700">{l.invite_code || l.inviteCode}</span>
             </div>
           ))}
-          {ligues.length===0 && <p className="text-xs text-zinc-500">Aucune ligue</p>}
+          {ligues.length===0 && <p className="text-xs text-zinc-500 dark:text-zinc-400">Aucune ligue</p>}
         </div>
       </div>
 
@@ -666,9 +673,9 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-red-700">Tape ton mot de passe pour confirmer. Tes ligues en tant que owner seront transférées ou supprimées.</p>
-            <input type="password" value={deletePwd} onChange={e=>setDeletePwd(e.target.value)} placeholder="Mot de passe" className="w-full border-2 border-red-300 rounded-2xl px-3 py-2" />
+            <input type="password" value={deletePwd} onChange={e=>setDeletePwd(e.target.value)} placeholder="Mot de passe" className="w-full border-2 border-red-300 rounded-2xl px-3 py-2 dark:bg-zinc-800 dark:text-zinc-100" />
             <div className="flex gap-2">
-              <button onClick={()=>setShowDelete(false)} className="flex-1 bg-white border-2 border-zinc-200 py-2 rounded-2xl font-bold">Annuler</button>
+              <button onClick={()=>setShowDelete(false)} className="flex-1 bg-white border-2 border-zinc-200 py-2 rounded-2xl font-bold dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">Annuler</button>
               <button onClick={del} className="flex-1 bg-red-600 text-white py-2 rounded-2xl font-black">Confirmer suppression</button>
             </div>
           </div>
@@ -702,13 +709,13 @@ const Inscription = ({ onDone, onBack }) => {
     <form onSubmit={submit} className="space-y-5">
       <div className="text-center">
         <div className="text-4xl">🎉</div>
-        <h2 className="font-black text-xl text-zinc-900">Ajouter un invité</h2>
-        <p className="text-sm text-zinc-500">Sans compte — pratique pour un collègue de passage</p>
+        <h2 className="font-black text-xl text-zinc-900 dark:text-zinc-100">Ajouter un invité</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Sans compte — pratique pour un collègue de passage</p>
       </div>
-      <label className="block text-sm font-bold text-zinc-700">Pseudo
-        <input value={pseudo} onChange={e=>setPseudo(e.target.value)} placeholder="ex. pierre_j" className="mt-1.5 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none bg-white shadow-sm" required />
+      <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300">Pseudo
+        <input value={pseudo} onChange={e=>setPseudo(e.target.value)} placeholder="ex. pierre_j" className="mt-1.5 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none bg-white shadow-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" required />
       </label>
-      <div className="text-sm font-bold text-zinc-700">Poste préféré
+      <div className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Poste préféré
         <div className="flex gap-2 mt-1.5">
           {[
             { v:'Défense', col: poste==='Défense' ? 'bg-blue-500 text-white border-blue-600 shadow-lg scale-[1.02]' : 'bg-blue-50 text-blue-700 border-blue-200', icon:'🛡️' },
@@ -719,14 +726,14 @@ const Inscription = ({ onDone, onBack }) => {
           ))}
         </div>
       </div>
-      <label className="block text-sm font-bold text-zinc-700">Niveau de départ
-        <select value={niveau} onChange={e=>setNiveau(e.target.value)} className="mt-1.5 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 bg-white focus:border-amber-400 focus:outline-none font-medium">
+      <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300">Niveau de départ
+        <select value={niveau} onChange={e=>setNiveau(e.target.value)} className="mt-1.5 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 bg-white focus:border-amber-400 focus:outline-none font-medium dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
           <option value="Débutant">Débutant 🌱</option><option value="Intermédiaire">Intermédiaire ⚡</option><option value="Confirmé">Confirmé 🔥</option>
         </select>
       </label>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-2xl font-black shadow-xl hover:shadow-2xl hover:scale-[1.01] transition text-base">🚀 Ajouter</button>
-      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 font-medium hover:text-zinc-700">← Retour accueil</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 font-medium hover:text-zinc-700 dark:text-zinc-400">← Retour accueil</button>
     </form>
   );
 };
@@ -802,21 +809,21 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      <h2 className="font-black text-xl text-zinc-900 flex items-center gap-2">
+      <h2 className="font-black text-xl text-zinc-900 flex items-center gap-2 dark:text-zinc-100">
         <span className="bg-gradient-to-r from-blue-500 to-red-500 text-white w-8 h-8 rounded-xl flex items-center justify-center text-sm">⚔️</span>
         Nouveau match
       </h2>
 
-      <div className="flex gap-2 p-1.5 bg-zinc-100 rounded-2xl">
+      <div className="flex gap-2 p-1.5 bg-zinc-100 rounded-2xl dark:bg-zinc-700">
         <button type="button" onClick={()=>setFormat('1v1')} className={`flex-1 py-3 rounded-xl font-black transition flex items-center justify-center gap-1 ${format==='1v1'?'bg-white shadow text-zinc-900 border': 'text-zinc-500'}`}>👤 1 vs 1</button>
         <button type="button" onClick={()=>setFormat('2v2')} className={`flex-1 py-3 rounded-xl font-black transition flex items-center justify-center gap-1 ${format==='2v2'?'bg-white shadow text-zinc-900 border': 'text-zinc-500'}`}>👥 2 vs 2</button>
       </div>
 
-      <button type="button" onClick={randomize} className="w-full bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 text-white py-3.5 rounded-2xl font-black shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 border-2 border-white">
+      <button type="button" onClick={randomize} className="w-full bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 text-white py-3.5 rounded-2xl font-black shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 border-2 border-white dark:bg-zinc-800 dark:text-zinc-100">
         <span className={`text-lg ${isRandom ? 'animate-spin' : ''}`}>🎲</span> Tirage aléatoire {format}
         <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{format==='1v1' ? '2 joueurs' : '4 joueurs'}</span>
       </button>
-      <p className="text-[11px] text-zinc-500 text-center -mt-3">On choisit le format, ça mélange les joueurs distincts</p>
+      <p className="text-[11px] text-zinc-500 text-center -mt-3 dark:text-zinc-400">On choisit le format, ça mélange les joueurs distincts</p>
 
       <div className="bg-blue-50 border-2 border-blue-200 rounded-3xl p-4 space-y-3 shadow-sm">
         <p className="text-sm font-black flex items-center gap-2 text-blue-700"><span className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center text-sm">💙</span>Équipe Bleue</p>
@@ -844,35 +851,35 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
       <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-3xl p-4">
         <p className="text-sm font-black text-amber-800 flex items-center gap-2">🏁 Score final</p>
         <div className="flex gap-3 items-center mt-3">
-          <div className="flex-1 bg-white border-2 border-blue-300 rounded-2xl p-2 flex items-center gap-2 shadow">
+          <div className="flex-1 bg-white border-2 border-blue-300 rounded-2xl p-2 flex items-center gap-2 shadow dark:bg-zinc-800 dark:text-zinc-100">
             <span className="w-3 h-3 rounded-full bg-blue-500"></span>
             <input type="number" value={scoreBleue} onChange={e=>setScoreBleue(e.target.value)} className="w-full font-black text-xl text-blue-700 focus:outline-none text-center" />
           </div>
-          <span className="font-black text-zinc-400 text-lg">—</span>
-          <div className="flex-1 bg-white border-2 border-red-300 rounded-2xl p-2 flex items-center gap-2 shadow">
+          <span className="font-black text-zinc-400 text-lg dark:text-zinc-400">—</span>
+          <div className="flex-1 bg-white border-2 border-red-300 rounded-2xl p-2 flex items-center gap-2 shadow dark:bg-zinc-800 dark:text-zinc-100">
             <input type="number" value={scoreRouge} onChange={e=>setScoreRouge(e.target.value)} className="w-full font-black text-xl text-red-700 focus:outline-none text-center" />
             <span className="w-3 h-3 rounded-full bg-red-500"></span>
           </div>
         </div>
       </div>
 
-      {err && <p className="text-sm text-red-700 bg-red-50 border-2 border-red-200 p-3 rounded-2xl font-bold">⚠️ {err}</p>}
+      {err && <p className="text-sm text-red-700 bg-red-50 border-2 border-red-200 p-3 rounded-2xl font-bold dark:bg-zinc-800 dark:text-zinc-100">⚠️ {err}</p>}
       <button type="submit" className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 rounded-2xl font-black shadow-xl hover:shadow-2xl hover:scale-[1.01] transition text-base">✅ Valider le match</button>
-      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 font-medium">← Retour</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 font-medium dark:text-zinc-400">← Retour</button>
     </form>
   );
 };
 
 const Stats = ({ classement, matches }) => {
-  if (!classement) return <p className="text-sm text-zinc-500 animate-pulse">Chargement des stats... ✨</p>;
+  if (!classement) return <p className="text-sm text-zinc-500 animate-pulse dark:text-zinc-400">Chargement des stats... ✨</p>;
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-black text-lg text-zinc-900 flex items-center gap-2">
+        <h2 className="font-black text-lg text-zinc-900 flex items-center gap-2 dark:text-zinc-100">
           <span className="bg-amber-400 text-white w-8 h-8 rounded-xl flex items-center justify-center">🏆</span> Classement
         </h2>
-        <div className="border-2 border-zinc-100 rounded-3xl overflow-hidden divide-y divide-zinc-100 mt-3 shadow-sm bg-white">
-          {classement.length===0 && <p className="p-8 text-sm text-zinc-500 text-center">Pas encore de matchs — lance le premier ! 🚀</p>}
+        <div className="border-2 border-zinc-100 rounded-3xl overflow-hidden divide-y divide-zinc-100 mt-3 shadow-sm bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
+          {classement.length===0 && <p className="p-8 text-sm text-zinc-500 text-center dark:text-zinc-400">Pas encore de matchs — lance le premier ! 🚀</p>}
           {classement.map((p,i)=>{
             const podium = i===0 ? 'bg-gradient-to-r from-amber-400 to-yellow-400 text-white shadow border-amber-300' : i===1 ? 'bg-gradient-to-r from-zinc-300 to-zinc-400 text-white' : i===2 ? 'bg-gradient-to-r from-amber-700 to-orange-700 text-white' : 'bg-white';
             const medal = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : `#${i+1}`;
@@ -890,7 +897,7 @@ const Stats = ({ classement, matches }) => {
       </div>
 
       <div>
-        <h2 className="font-black text-zinc-900 flex items-center gap-2">🕰️ Derniers matchs</h2>
+        <h2 className="font-black text-zinc-900 flex items-center gap-2 dark:text-zinc-100">🕰️ Derniers matchs</h2>
         <div className="space-y-3 mt-3">
           {matches.slice(0,10).map(m=>{
             const bleue = m.team_bleue ?? m.team_a;
@@ -900,7 +907,7 @@ const Stats = ({ classement, matches }) => {
             const winBleue = sBleue > sRouge;
             const fmt = (t) => `${t.pseudo}${t.poste ? ` ${t.poste==='Attaque'?'⚡':t.poste==='Défense'?'🛡️':'↔'}` : ''}`;
             return (
-            <div key={m.id} className="border-2 border-zinc-100 rounded-3xl p-3.5 flex justify-between items-center bg-white shadow-sm hover:shadow-md transition">
+            <div key={m.id} className="border-2 border-zinc-100 rounded-3xl p-3.5 flex justify-between items-center bg-white shadow-sm hover:shadow-md transition dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
               <div className="flex items-center gap-2 text-sm font-bold flex-1 min-w-0">
                 <span className={`px-2.5 py-1 rounded-full text-xs truncate ${winBleue ? 'bg-blue-500 text-white shadow' : 'bg-blue-50 text-blue-700'}`}>{bleue.map(fmt).join(' + ')}</span>
                 <span className="text-zinc-300 font-black">vs</span>
@@ -909,7 +916,7 @@ const Stats = ({ classement, matches }) => {
               <span className={`ml-3 font-black px-3 py-1.5 rounded-2xl text-sm shrink-0 ${winBleue ? 'bg-blue-500 text-white' : 'bg-red-500 text-white'}`}>{sBleue}-{sRouge}</span>
             </div>
           )})}
-          {matches.length===0 && <p className="text-xs text-zinc-400 text-center py-4">Aucun match joué</p>}
+          {matches.length===0 && <p className="text-xs text-zinc-400 text-center py-4 dark:text-zinc-400">Aucun match joué</p>}
         </div>
       </div>
     </div>
