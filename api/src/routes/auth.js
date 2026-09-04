@@ -50,7 +50,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
           found.role = initialRole;
         }
       } catch {}
-      if (isUsers) {
+      if (isUsers && initialRole !== 'admin') {
         try { await db.insert(players).values({ pseudo: pseudo.trim(), poste, niveau }).returning(); } catch {}
       }
       const token = signToken({ id: row.id, email: row.email, pseudo: row.pseudo, role: initialRole });

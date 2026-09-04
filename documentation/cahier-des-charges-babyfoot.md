@@ -10,11 +10,12 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 ## 3. Fonctionnalités
 
 ### 3.1 Auth — (FAIT)
-- `POST /api/auth/register` {email, pseudo, password(6+), poste, niveau} → JWT 7j (`JWT_SECRET`), `users` table
-- `POST /api/auth/login` {email, password} → JWT
-- `GET /api/auth/me` (Bearer) + `POST /api/auth/logout`
-- Front `web/src/App.jsx` : `Register`/`Login`, header `👋 pseudo`, `localStorage babyfoot_token`, `authFetch` ajoute `Authorization: Bearer`
-- Rétro-compat : `players` reste pour invités sans compte (`POST /api/players` pseudo seul)
+- `POST /api/auth/register` {email, pseudo, password(6+), poste, niveau, role} → JWT 7j `HS256` (`JWT_SECRET`, `ADMIN_EMAILS` → `admin`), `users` (`role admin|user`, `email_verified`, `verification_token` hash `sha256`)
+- `POST /api/auth/login` {email, password} → JWT + `role`, rate-limit `5/15min 429`, `POST /api/auth/verify-email`/`resend`/`forgot`/`reset` (hash, dev-only leak), `PATCH /me`/`change-password`/`DELETE /me`, `POST /api/players/:id/claim`
+- `GET /api/auth/me` (Bearer/`httpOnly` cookie) + `POST /api/auth/logout` + `middleware/auth` `requireAuth`/`requireAdmin`
+- Front `web/src/pages/*` (`Register`/`Login`/`Forgot`/`Reset`/`VerifyEmail`) + `Profil` + `Admin` (modération), header `👋 pseudo` `ADMIN` badge, `localStorage` + `authFetch`
+- Modération `utils/moderation.js` blocklist, rétro-compat `players` invité + `claim` vers `users`
+- Comptes démo `admin@example.com`/`admin1234` (`admin` système, pas joueur) + `demo@example.com`/`demo1234` (`user`), seed `api/src/db/seed.js` `32` users + `120` matchs
 
 ### 3.2 Ligues privées par code (FAIT)
 - Tables `ligues(id,name,slug,description,owner_id,invite_code unique 6, is_private)` + `ligue_members(ligue_id,user_id,role owner/member)`
@@ -51,8 +52,8 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 
 ## 4. Modèle de données (réel)
 
-**users** `id, email unique, pseudo unique, password_hash, poste, niveau, created_at`
-**players** `id, pseudo unique, poste, niveau, created_at` (invités, gardé pour compat)
+**users** `id, email unique, pseudo unique, password_hash, poste, niveau, role admin|user, email_verified, verification_token (hash), reset_token (hash), created_at`
+**players** `id, pseudo unique, poste, niveau, created_at` (invités, `claim` vers `users`)
 **ligues** `id, name, slug unique, description, owner_id→users, invite_code unique, is_private, created_at`
 **ligue_members** `id, ligue_id→ligues, user_id→users, role, joined_at, UNIQUE(ligue_id,user_id)`
 **matches** `id, format, team_bleue JSONB, team_rouge JSONB, score_bleue INT, score_rouge INT, ligue_id→ligues, team_a/b, score_a/b (legacy), created_at`
@@ -68,13 +69,13 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 
 - Mobile-first, usage au bureau + ouverture internet
 - Données isolées par ligue privée (code), pas de liste publique
-- **Ports locaux** : `db 5432`, `api 33333` (`PORT`), `web 55174` (`VITE_API_URL=""` → proxy `vite.config.js:proxy /api → http://api:33333`), `landing 55175` (Astro). Ancien `5173/3000` abandonnés.
+- **Ports locaux** : `db 5432`, `api 33333` (`PORT`, `ADMIN_EMAILS`), `web 55174` (`VITE_API_URL=""` → proxy `vite.config.js:proxy /api → http://api:33333`), `landing 55175` (Astro). Ancien `5173/3000` abandonnés.
 - **Stack** :
-  - Frontend app : React 18 + Vite 6 + Tailwind 4, `node:20-alpine`, HMR `watch:{usePolling:true}`, `host 0.0.0.0`
-  - Frontend vitrine : Astro 5 + Tailwind 4 (`landing/`, `astro.config.mjs` + `@tailwindcss/vite`)
-  - Backend : Node 20 Fastify 5 + `@fastify/cors`, `pg` + `drizzle-orm`, `bcryptjs` + `jsonwebtoken` (JWT 7j, `JWT_SECRET`)
-  - DB : Postgres 16 (`pgdata` persistant, `babyfoot` + `babyfoot_test` pour tests)
-  - Orchestration : `docker-compose.yml` (db, api, web, landing) + volumes `pgdata`, ` - ./api:/app` + `/app/node_modules` pour HMR, `0.0.0.0:PORT->PORT` pour réseau local
+  - Frontend app : React 18 + Vite 6 + Tailwind 4 + thème sombre par défaut, `node:20-alpine`, HMR `watch:{usePolling:true}`, `host 0.0.0.0`, `12` pages `web/src/pages/*` (`App.jsx` router `194`L)
+  - Frontend vitrine : Astro 5 + Tailwind 4 (`landing/src/pages/index.astro` `Crée/Joue/Suis`, footer `© 2026`)
+  - Backend : Node 20 Fastify 5 `trustProxy:1` + `@fastify/helmet` + `@fastify/cors` whitelist + `@fastify/cookie`, `pg` + `drizzle-orm`, `bcryptjs` + `jsonwebtoken` `HS256` (JWT 7j, `JWT_SECRET` fail-closed, `hashToken`), `utils/moderation` blocklist
+  - DB : Postgres 16 (`pgdata` persistant, `babyfoot` + `babyfoot_test` pour tests), seed `src/db/seed.js` `32`/`5`/`120`
+  - Orchestration : `docker-compose.yml` (db, api, web, landing, `studio` `profiles:dev` `https://local.drizzle.studio`) + volumes `pgdata`, ` - ./api:/app` + `/app/node_modules` pour HMR, `0.0.0.0:PORT->PORT` pour réseau local
   - Reverse proxy prod : Caddy (`Caddyfile.example` : `babyfootauboulot.dev → 55175`, `app.babyfootauboulot.dev → 55174` + `handle /api/* → 33333`)
 
 ## 7. Tests (FAIT)
@@ -85,7 +86,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - Scripts `api/package.json` : `test`, `test:unit`, `test:integration`, `test:integration:real`, `test:e2e`, `test:db:setup` ; `web/package.json` : `test`, `test:e2e`
 
 ## 8. Hors périmètre v1 (inchangé) vs v2
-- v1 : auth complexe, ELO, native — **v2 auth email+mdp et ligues ont été ajoutés**, reste : ELO auto, native, email vérification, reset password, OAuth, notifications, filtres période
+- v1 : auth complexe, ELO, native — **v2 auth email+mdp et ligues ont été ajoutés + rôles admin/user + modération + seed démo + MVC**, reste : ELO auto, native, OAuth, notifications, filtres période
 
 ---
-*MAJ 2026-09-04 — Code : `api/src/app.js`, `api/src/db/schema.js`, `web/src/App.jsx`, `landing/src/pages/index.astro`, `docker-compose.yml`, `Caddyfile.example` — HMR actif, `babyfootauboulot.dev`.*
+*MAJ 2026-09-04 — Code : `api/src/app.js` (`151`L) + `routes/*` `middleware/auth` `utils/helpers|moderation`, `api/src/db/schema.js` (`role`), `web/src/pages/*` (`12` pages), `landing/src/pages/index.astro`, `docker-compose.yml`, `Caddyfile.example` — HMR actif, `babyfootauboulot.dev`.*

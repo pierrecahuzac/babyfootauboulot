@@ -1,6 +1,6 @@
-# Sécurité — Babyfoot au boulot — 2026-09-04
+# Sécurité — Babyfoot au boulot — MAJ 2026-09-04 (dev:0041db1 + admin/moderation)
 
-> Audit `dev:ec906d4` — 3 niveaux : 🔴 Rouge (CRITICAL, exploitable), 🟠 Orange (HIGH/MEDIUM, durcissement), 🟢 Vert (positif / bonne pratique). Ref `fichier:ligne`.
+> Audit `dev:ec906d4` → MAJ `0041db1` — 3 niveaux : 🔴 Rouge (CRITICAL, exploitable), 🟠 Orange (HIGH/MEDIUM, durcissement), 🟢 Vert (positif / bonne pratique). Ref `fichier:ligne`.
 
 ---
 
@@ -55,9 +55,9 @@
 
 ## Plan P0 (en cours — toi: "oui")
 
-1. Backend `auth.js` fail-closed + `helmet` + CORS whitelist ✅ partiel
-2. Frontend `history.replaceState` + CSP `index.html` + `httpOnly` cookie 🟡
+1. Backend `auth.js` fail-closed + `helmet` + CORS whitelist ✅ partiel + `admin`/`moderation` ✅ (`0041db1`, `e1a060b`)
+2. Frontend `history.replaceState` + CSP `index.html` + `httpOnly` cookie 🟡 + `Admin` modération + thème sombre `04d63a0`
 3. Infra `Caddy` ordre + HSTS, `db` `127.0.0.1:5432` prod, Docker `USER node` + `.dockerignore` 🟡
-4. Tests `api 24 passed` `web 21 passed`, `ec906d4` push dev
+4. Tests `api 24 passed` `web 21 passed`, `0041db1` MVC + `c3e4ded` SESSION
 
 > Fichier généré pour suivi — à mettre à jour à chaque fix P0. Ne jamais commit `.env` (`/.gitignore:2`).

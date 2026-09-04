@@ -1,4 +1,4 @@
-# Wireframes — App Babyfoot au boulot
+# Wireframes — App Babyfoot au boulot — MAJ 2026-09-04 (auth, ligues, admin)
 
 Wireframes texte des écrans principaux, mobile-first.
 
@@ -100,3 +100,52 @@ Wireframes texte des écrans principaux, mobile-first.
 
 - Classement trié par victoires (ou ratio)
 - Liste des derniers matchs en dessous
+
+---
+
+## 5. Auth — Register / Login / Verify / Forgot
+
+```
+┌─────────────────────────────┐
+│ Créer ton compte             │
+│ Email [ ] Pseudo [ ] Mdp [ ]│
+│ Poste [Attaque] Niveau [   ]│
+│ [ Créer mon compte ]        │
+│ Déjà un compte ? Connexion  │
+└─────────────────────────────┘
+```
+
+- `Login` email/mdp + `Mot de passe oublié ?` → `Forgot` (email) → `Reset` (token 64 + new pwd)
+- `Verify` token + `Renvoyer`, banner `Email non vérifié` si `emailVerified=false`
+
+---
+
+## 6. Ligues
+
+```
+┌─────────────────────────────┐
+│ 🏆 Mes ligues privées       │
+│ [ Boulot ✓ Active ] [Choisir]│
+│ Code: A3K9P2 [Voir][Copier] │
+│ [ + Créer ligue ]           │
+│ [ Rejoindre avec code ]     │
+└─────────────────────────────┘
+```
+
+- `select` ne montre que les ligues du membre, `Gérer` → `Ligues`, `invite_code` masqué par défaut
+
+---
+
+## 7. Admin — Modération
+
+```
+┌─────────────────────────────┐
+│ 🛡️ Admin — Modération       │
+│ Comptes: 32 • Signalés: 0  │
+│ [filtrer pseudo/email ]     │
+│ admin ADMIN • Les 2 • ✓ [user][Suppr] │
+│ demo • Attaque • ✓ [admin][Suppr] │
+└─────────────────────────────┘
+```
+
+- Seul `admin@example.com` (`role:admin` via `ADMIN_EMAILS`), tri `admin` en premier, `Promouvoir`/`Rétrograder` retirés (rôle statique), `Suppr` + `Bannir` si pseudo bloqué

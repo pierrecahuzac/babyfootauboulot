@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { isBlocked, blockedReason } from '../utils/moderation.js';
 import { authFromRequest } from '../utils/auth.js';
+import { createAuthMiddleware } from '../middleware/auth.js';
 
 export default async function playersRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers }) {
   const liguesTable = ligues;
@@ -30,6 +31,7 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
   };
 
   const getUsersTable = () => users || players;
+  const { requireAuth } = createAuthMiddleware();
 
   app.get('/api/players', async (req, reply) => {
     const ligueId = getLigueId(req);
@@ -71,5 +73,50 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
     const [row] = await db.update(players).set(data).where(eq(players.id, Number(req.params.id))).returning();
     if (!row) return reply.code(404).send({ error: 'joueur introuvable' });
     return row;
+  });
+
+  // Claim: un user récupère son ancien pseudo invité et ses matchs
+  app.post('/api/players/:id/claim', { preHandler: requireAuth }, async (req, reply) => {
+    const playerId = Number(req.params.id);
+    const [player] = await db.select().from(players).where(eq(players.id, playerId));
+    if (!player) return reply.code(404).send({ error: 'joueur invité introuvable' });
+    if (player.pseudo.toLowerCase() !== req.user.pseudo.toLowerCase()) {
+      return reply.code(403).send({ error: 'tu ne peux réclamer que ton propre pseudo' });
+    }
+    // vérifie qu'il n'y a pas déjà un user avec même pseudo (normalement c'est toi)
+    // transfère les matchs
+    try {
+      const allMatches = await db.select().from(matches);
+      for (const m of allMatches) {
+        let changed = false;
+        const updateTeam = (team) => {
+          if (!Array.isArray(team)) return team;
+          return team.map(p => {
+            if ((p.id && Number(p.id) === Number(player.id)) || (p.pseudo && p.pseudo.toLowerCase() === player.pseudo.toLowerCase())) {
+              changed = true;
+              return { ...p, id: req.user.id, pseudo: req.user.pseudo };
+            }
+            return p;
+          });
+        };
+        const newBleue = updateTeam(m.teamBleue ?? m.team_bleue);
+        const newRouge = updateTeam(m.teamRouge ?? m.team_rouge);
+        const newA = updateTeam(m.teamA ?? m.team_a);
+        const newB = updateTeam(m.teamB ?? m.team_b);
+        if (changed) {
+          await db.update(matches).set({
+            teamBleue: newBleue,
+            teamRouge: newRouge,
+          }).where(eq(matches.id, m.id));
+          // compat legacy
+          try { await pool.query(`UPDATE matches SET team_bleue=$1, team_rouge=$2, team_a=$1, team_b=$2 WHERE id=$3`, [JSON.stringify(newBleue), JSON.stringify(newRouge), m.id]); } catch {}
+        }
+      }
+      await db.delete(players).where(eq(players.id, playerId));
+      try { await pool.query(`DELETE FROM players WHERE id=$1`, [playerId]); } catch {}
+    } catch (e) {
+      return reply.code(500).send({ error: 'échec du transfert' });
+    }
+    return { ok: true, message: `Pseudo ${player.pseudo} réclamé, matchs transférés` };
   });
 }
