@@ -1,13 +1,15 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import cookie from '@fastify/cookie';
 import crypto from 'crypto';
 import { eq, desc, and } from 'drizzle-orm';
 import { calculateClassement, normalizeMatch, validateMatchPayload } from './utils/stats.js';
-import { hashPassword, verifyPassword, signToken, authFromRequest } from './utils/auth.js';
+import { hashPassword, verifyPassword, signToken, authFromRequest, hashToken } from './utils/auth.js';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'ligue';
-const genInvite = () => Math.random().toString(36).slice(2, 8).toUpperCase();
-const genSlug = (name) => `${slugify(name)}-${Math.random().toString(36).slice(2, 5)}`;
+const genInvite = () => crypto.randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
+const genSlug = (name) => `${slugify(name)}-${crypto.randomBytes(2).toString('hex')}`;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (e) => typeof e === 'string' && e.length <= 254 && EMAIL_RE.test(e.trim());
@@ -50,7 +52,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
   const usersTable = users;
   const liguesTable = ligues;
   const membersTable = ligueMembers;
-  const app = Fastify({ logger: false });
+  const app = Fastify({ logger: false, trustProxy: 1 });
 
   const initDb = async () => {
     await pool.query(`
@@ -151,18 +153,42 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     }
   };
 
-  app.register(cors, { origin: true, credentials: true });
+  app.register(helmet, {
+    contentSecurityPolicy: false, // API JSON, pas besoin CSP stricte, mais headers HSTS etc activés
+    crossOriginEmbedderPolicy: false,
+  });
+  app.register(cookie);
+  const corsOrigins = (process.env.CORS_ORIGIN || 'https://babyfootauboulot.dev,https://app.babyfootauboulot.dev,http://localhost:55174,http://localhost:55175').split(',').map(s=>s.trim()).filter(Boolean);
+  app.register(cors, {
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (corsOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:'))) return cb(null, true);
+      return cb(new Error('CORS bloqué'), false);
+    },
+    credentials: true,
+    methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
+  });
 
   const requireAuth = async (req, reply) => {
     const payload = authFromRequest(req);
     if (!payload) {
+      // aussi tente cookie httpOnly
+      const cookieToken = req.cookies?.token;
+      if (cookieToken) {
+        try {
+          const { verifyToken } = await import('./utils/auth.js');
+          const p = verifyToken(cookieToken);
+          req.user = p;
+          return;
+        } catch {}
+      }
       reply.code(401).send({ error: 'auth requise' });
       return;
     }
     req.user = payload;
   };
 
-  // --- Auth MVP email+mdp ---
+  // --- Auth email+mdp ---
   const getUsersTable = () => usersTable || players;
 
   app.post('/api/auth/register', async (req, reply) => {
@@ -173,13 +199,14 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     if (!pseudo.trim() || pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
     const emailNorm = email.trim().toLowerCase();
     const hash = await hashPassword(password);
-    const verificationToken = genVerificationToken();
+    const verificationTokenRaw = genVerificationToken();
+    const verificationTokenHash = hashToken(verificationTokenRaw);
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const target = getUsersTable();
     const isUsers = target && target !== players;
     try {
-      // drizzle insert avec colonnes v2 si dispo
-      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, emailVerified: 0, verificationToken, verificationExpires };
+      // drizzle insert avec colonnes v2 si dispo - on stocke le hash
+      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, emailVerified: 0, verificationToken: verificationTokenHash, verificationExpires };
       let row;
       try {
         const [r] = await db.insert(target).values(values).returning();
@@ -191,15 +218,15 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
       }
       // assure via pool pour vraie DB (drizzle peut ignorer colonnes si schema pas à jour)
       try {
-        await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2, email_verified=0 WHERE id=$3`, [verificationToken, verificationExpires, row.id]);
+        await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2, email_verified=0 WHERE id=$3`, [verificationTokenHash, verificationExpires, row.id]);
       } catch {}
       // sync pool pour mock: on met à jour l'objet en mémoire si pool query noop
       try {
         const rows = await db.select().from(target);
         const found = rows.find(r => r.id === row.id);
         if (found) {
-          found.verificationToken = verificationToken;
-          found.verification_token = verificationToken;
+          found.verificationToken = verificationTokenHash;
+          found.verification_token = verificationTokenHash;
           found.verificationExpires = verificationExpires;
           found.verification_expires = verificationExpires;
           found.emailVerified = 0;
@@ -242,7 +269,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     }
     recordLoginAttempt(rateKey, true);
     const emailVerified = Boolean(user.emailVerified ?? user.email_verified);
-    // on autorise login même si non vérifié pour ne pas bloquer MVP, mais on signale
+    // on autorise login même si non vérifié, mais on signale
     const token = signToken({ id: user.id, email: user.email, pseudo: user.pseudo });
     return reply.send({ user: { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, emailVerified }, token, emailVerified });
   });
@@ -363,7 +390,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     return { ok: true, message: 'Mot de passe réinitialisé' };
   });
 
-  // PATCH profil (email/pseudo/poste/niveau) — MVP
+  // PATCH profil (email/pseudo/poste/niveau)
   app.patch('/api/auth/me', { preHandler: requireAuth }, async (req, reply) => {
     const { email, pseudo, poste, niveau } = req.body;
     const target = getUsersTable();
@@ -464,7 +491,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
 
   app.delete('/api/auth/me', { preHandler: requireAuth }, async (req, reply) => {
     const { password } = req.body || {};
-    // pour MVP on exige le mot de passe pour confirmer la suppression
+    // on exige le mot de passe pour confirmer la suppression
     if (!password) return reply.code(400).send({ error: 'mot de passe requis pour confirmer la suppression' });
     const target = getUsersTable();
     const rows = await db.select().from(target);
@@ -643,7 +670,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     if (!ligueId) return true; // si pas de ligue_id, on autorise pour compat (global)
     if (!req.user && !authFromRequest(req)) {
       // si route non protégée, on vérifie quand même si ligue privée -> on laisse passer pour lecture mais on pourrait exiger auth
-      // pour MVP on exige auth si ligue_id présent
+      // on exige auth si ligue_id présent
       const payload = authFromRequest(req);
       if (!payload) { reply.code(401).send({ error: 'auth requise pour ligue' }); return false; }
       req.user = payload;

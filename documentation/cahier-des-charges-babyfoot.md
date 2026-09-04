@@ -1,7 +1,7 @@
 # Cahier des charges — Babyfoot au boulot — v2 (MAJ 2026-09-04)
 
 ## 1. Contexte et objectif
-App mobile-first pour organiser les parties de babyfoot entre collègues *et* ouverture internet. Deux vitrines : **babyfootauboulot.dev** (landing Astro) → **app.babyfootauboulot.dev** (app React). Ligues privées isolées (boulot ≠ inconnus), auth solide MVP email+mdp, stats live.
+App mobile-first pour organiser les parties de babyfoot entre collègues *et* ouverture internet. Deux vitrines : **babyfootauboulot.dev** (landing Astro) → **app.babyfootauboulot.dev** (app React). Ligues privées isolées (boulot ≠ inconnus), auth email+mdp, stats live.
 
 ## 2. Utilisateurs cibles
 - **Interne** : collègues du bureau (1 ligue privée “Boulot”)
@@ -9,7 +9,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 
 ## 3. Fonctionnalités
 
-### 3.1 Auth — MVP solide (FAIT)
+### 3.1 Auth — (FAIT)
 - `POST /api/auth/register` {email, pseudo, password(6+), poste, niveau} → JWT 7j (`JWT_SECRET`), `users` table
 - `POST /api/auth/login` {email, password} → JWT
 - `GET /api/auth/me` (Bearer) + `POST /api/auth/logout`
@@ -74,7 +74,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
   - Frontend vitrine : Astro 5 + Tailwind 4 (`landing/`, `astro.config.mjs` + `@tailwindcss/vite`)
   - Backend : Node 20 Fastify 5 + `@fastify/cors`, `pg` + `drizzle-orm`, `bcryptjs` + `jsonwebtoken` (JWT 7j, `JWT_SECRET`)
   - DB : Postgres 16 (`pgdata` persistant, `babyfoot` + `babyfoot_test` pour tests)
-  - Orchestration : `docker-compose.yml` (db, api, web, landing) + volumes `pgdata`, ` - ./api:/app` + `/app/node_modules` pour HMR, `0.0.0.0:PORT->PORT` pour LAN `192.168.1.181`
+  - Orchestration : `docker-compose.yml` (db, api, web, landing) + volumes `pgdata`, ` - ./api:/app` + `/app/node_modules` pour HMR, `0.0.0.0:PORT->PORT` pour réseau local
   - Reverse proxy prod : Caddy (`Caddyfile.example` : `babyfootauboulot.dev → 55175`, `app.babyfootauboulot.dev → 55174` + `handle /api/* → 33333`)
 
 ## 7. Tests (FAIT)
@@ -85,7 +85,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - Scripts `api/package.json` : `test`, `test:unit`, `test:integration`, `test:integration:real`, `test:e2e`, `test:db:setup` ; `web/package.json` : `test`, `test:e2e`
 
 ## 8. Hors périmètre v1 (inchangé) vs v2
-- v1 : auth complexe, ELO, native — **v2 auth email+mdp et ligues ont été ajoutés (MVP solide)**, reste : ELO auto, native, email vérification, reset password, OAuth, notifications, filtres période
+- v1 : auth complexe, ELO, native — **v2 auth email+mdp et ligues ont été ajoutés**, reste : ELO auto, native, email vérification, reset password, OAuth, notifications, filtres période
 
 ---
 *MAJ 2026-09-04 — Code : `api/src/app.js`, `api/src/db/schema.js`, `web/src/App.jsx`, `landing/src/pages/index.astro`, `docker-compose.yml`, `Caddyfile.example` — HMR actif, `babyfootauboulot.dev`.*

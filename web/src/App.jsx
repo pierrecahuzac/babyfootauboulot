@@ -231,7 +231,7 @@ const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
       {!user ? (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-4 flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
-            <p className="font-black text-amber-900 text-sm">🔒 MVP solide — email + mot de passe</p>
+            <p className="font-black text-amber-900 text-sm">🔒 Sécurisé — email + mot de passe</p>
             <p className="text-xs text-amber-800">Crée ton compte pour jouer, ton pseudo est réservé.</p>
           </div>
           <div className="flex gap-2">
