@@ -5,7 +5,12 @@ import { getToken, setToken, authFetch } from './utils/auth.js';
 const API = import.meta.env.VITE_API_URL || '';
 
 const App = () => {
-  const [view, setView] = useState('accueil');
+  const [view, setView] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('verify')) return 'verify';
+    if (p.get('reset')) return 'reset';
+    return 'accueil';
+  });
   const [players, setPlayers] = useState([]);
   const [stats, setStats] = useState(null);
   const [matches, setMatches] = useState([]);
@@ -114,6 +119,12 @@ const App = () => {
         </header>
 
         {user && <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-2 text-xs text-emerald-800 flex justify-between"><span>👋 {user.pseudo} • {user.poste} • {user.niveau}</span><span className="hidden sm:inline">{user.email}</span></div>}
+        {user && !(user.emailVerified ?? user.email_verified) && (
+          <div className="bg-amber-100 border-b border-amber-300 px-5 py-2 text-xs text-amber-900 flex justify-between items-center">
+            <span>⚠️ Email non vérifié — vérifie ta boîte</span>
+            <button onClick={()=>setView('verify')} className="bg-amber-500 text-white px-3 py-1 rounded-full font-bold">Vérifier</button>
+          </div>
+        )}
         {user && (
           <div className="px-5 py-2 bg-white border-b flex items-center gap-2 text-xs">
             <span className="font-black text-zinc-600">🏆 Ligue</span>
@@ -129,7 +140,11 @@ const App = () => {
           {view === 'accueil' && <Accueil players={players} onNav={setView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>setView('ligues')} />}
           {view === 'inscription' && <Inscription onDone={() => { refresh(); setView('accueil'); }} onBack={() => setView('accueil')} />}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('login')} />}
-          {view === 'login' && <Login onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('register')} />}
+          {view === 'login' && <Login onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
+          {view === 'forgot' && <Forgot onBack={()=>setView('login')} onReset={(t)=>{ setView('reset'); if(t) window.history.pushState({},'','?reset='+t); }} />}
+          {view === 'reset' && <Reset onBack={()=>setView('login')} onDone={()=>setView('login')} />}
+          {view === 'verify' && <VerifyEmail user={user} onBack={()=>setView('accueil')} onVerified={(data)=>{ setUser(data.user); setToken(data.token); setView('accueil'); loadMe(); }} />}
+          {view === 'profil' && <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} />}
           {view === 'ligues' && <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} />}
           {view === 'match' && <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); setView('stats'); }} onBack={() => setView('accueil')} />}
           {view === 'stats' && <Stats classement={stats} matches={matches} />}
@@ -266,13 +281,15 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
   const [poste, setPoste] = useState('Attaque');
   const [niveau, setNiveau] = useState('Débutant');
   const [err, setErr] = useState('');
+  const [info, setInfo] = useState('');
 
   const submit = async (e) => {
     e.preventDefault();
-    setErr('');
+    setErr(''); setInfo('');
     const res = await fetch(`${API}/api/auth/register`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ email, pseudo, password, poste, niveau }) });
     const body = await res.json();
     if (!res.ok) { setErr(body.error); return; }
+    if (body.verificationToken) setInfo(`Compte créé ! Token vérif (dev): ${body.verificationToken.slice(0,12)}… — check /verify`);
     onAuth(body);
   };
 
@@ -305,6 +322,7 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
         </select>
       </label>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
+      {info && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {info}</p>}
       <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-2xl font-black shadow-xl">Créer mon compte</button>
       <p className="text-center text-sm">Déjà un compte ? <button type="button" onClick={onSwitch} className="font-black text-emerald-600 underline">Connexion</button></p>
       <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
@@ -312,7 +330,7 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
   );
 };
 
-const Login = ({ onAuth, onBack, onSwitch }) => {
+const Login = ({ onAuth, onBack, onSwitch, onForgot }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
@@ -322,7 +340,10 @@ const Login = ({ onAuth, onBack, onSwitch }) => {
     setErr('');
     const res = await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ email, password }) });
     const body = await res.json();
-    if (!res.ok) { setErr(body.error); return; }
+    if (!res.ok) { setErr(body.error + (res.status===429 ? ' ⏳' : '')); return; }
+    if (body.emailVerified === false) {
+      // on laisse passer mais on prévient
+    }
     onAuth(body);
   };
 
@@ -342,8 +363,106 @@ const Login = ({ onAuth, onBack, onSwitch }) => {
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       <button type="submit" className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black shadow-xl">Se connecter</button>
       <p className="text-center text-sm">Pas de compte ? <button type="button" onClick={onSwitch} className="font-black text-emerald-600 underline">Créer</button></p>
+      <p className="text-center text-sm"><button type="button" onClick={onForgot} className="text-emerald-600 underline">Mot de passe oublié ?</button></p>
       <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
     </form>
+  );
+};
+
+const Forgot = ({ onBack, onReset }) => {
+  const [email, setEmail] = useState('');
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+  const [token, setToken] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(''); setOk(''); setToken('');
+    const r = await fetch(`${API}/api/auth/forgot`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+    const b = await r.json();
+    if (!r.ok) { setErr(b.error); return; }
+    if (b.resetToken) {
+      setToken(b.resetToken);
+      setOk(`Token (dev): ${b.resetToken.slice(0,12)}… — copie-le pour reset`);
+    } else setOk(b.message || 'Si ce compte existe, un email a été envoyé');
+  };
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <div className="text-center"><div className="text-4xl">📧</div><h2 className="font-black text-xl">Mot de passe oublié</h2><p className="text-sm text-zinc-500">Entre ton email</p></div>
+      <label className="block text-sm font-bold">Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="toi@exemple.com" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3" required /></label>
+      {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
+      {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
+      {token && <button type="button" onClick={()=>onReset(token)} className="w-full bg-amber-500 text-white py-3 rounded-2xl font-black">Aller au reset →</button>}
+      <button className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black">Envoyer</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour connexion</button>
+    </form>
+  );
+};
+
+const Reset = ({ onBack, onDone }) => {
+  const [token, setToken] = useState(() => new URLSearchParams(window.location.search).get('reset') || '');
+  const [pwd, setPwd] = useState('');
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(''); setOk('');
+    const r = await fetch(`${API}/api/auth/reset`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, newPassword: pwd }) });
+    const b = await r.json();
+    if (!r.ok) { setErr(b.error); return; }
+    setOk('Mot de passe réinitialisé — connecte-toi');
+    setTimeout(()=>onDone(), 1200);
+  };
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <div className="text-center"><div className="text-4xl">🔐</div><h2 className="font-black text-xl">Réinitialiser</h2><p className="text-sm text-zinc-500">Token + nouveau mdp (6+)</p></div>
+      <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="colle le token" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs" required /></label>
+      <label className="block text-sm font-bold">Nouveau mot de passe<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3" required /></label>
+      {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
+      {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
+      <button className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black">Réinitialiser</button>
+      <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
+    </form>
+  );
+};
+
+const VerifyEmail = ({ user, onBack, onVerified }) => {
+  const [token, setToken] = useState(() => new URLSearchParams(window.location.search).get('verify') || '');
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
+  const submit = async (e) => {
+    e.preventDefault();
+    setErr(''); setOk('');
+    const r = await fetch(`${API}/api/auth/verify-email`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
+    const b = await r.json();
+    if (!r.ok) { setErr(b.error); return; }
+    setOk('Email vérifié !');
+    if (b.token && b.user) onVerified(b);
+  };
+  const resend = async () => {
+    setErr(''); setOk('');
+    const r = await fetch(`${API}/api/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email || user?.email }) });
+    const b = await r.json();
+    if (!r.ok) { setErr(b.error); return; }
+    setOk(b.verificationToken ? `Nouveau token (dev): ${b.verificationToken.slice(0,12)}…` : b.message);
+    if (b.verificationToken) setToken(b.verificationToken);
+  };
+  return (
+    <div className="space-y-4">
+      <div className="text-center"><div className="text-4xl">✉️</div><h2 className="font-black text-xl">Vérifier ton email</h2><p className="text-sm text-zinc-500">Colle le token reçu (dev: renvoyé à l'inscription)</p></div>
+      <form onSubmit={submit} className="space-y-3">
+        <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="token 64 hex" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs" required /></label>
+        {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
+        {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
+        <button className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black">Vérifier</button>
+      </form>
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 space-y-2">
+        <p className="text-sm font-black">Pas reçu ?</p>
+        <label className="block text-sm">Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-3 py-2" placeholder="toi@exemple.com" /></label>
+        <button onClick={resend} className="w-full bg-amber-500 text-white py-3 rounded-2xl font-black">Renvoyer</button>
+      </div>
+      <button onClick={onBack} className="w-full text-sm text-zinc-500">← Retour</button>
+    </div>
   );
 };
 
