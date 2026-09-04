@@ -507,32 +507,32 @@ const Admin = ({ user, onBack }) => {
     setMsg(`Supprimé ${pseudo}`);
     load();
   };
-  if (user?.role!=='admin') return <div className="p-8 text-center"><p className="font-black">🔒 Admin requis</p><p className="text-sm text-zinc-500">Connecte-toi avec admin@example.com</p><button onClick={onBack} className="mt-3 text-sm text-zinc-500">← Retour</button></div>;
+  if (user?.role!=='admin') return <div className="p-8 text-center"><p className="font-black dark:text-zinc-100">🔒 Admin requis</p><p className="text-sm text-zinc-500 dark:text-zinc-400">Connecte-toi avec admin@example.com</p><button onClick={onBack} className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">← Retour</button></div>;
   const filtered = users.filter(u => !filter || u.pseudo.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
   const flagged = users.filter(u => isBlocked(u.pseudo));
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center"><h2 className="font-black text-xl">🛡️ Admin — Modération</h2><button onClick={onBack} className="text-sm text-zinc-500">← Retour</button></div>
-      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 text-xs">Comptes: {users.length} • Signalés: {flagged.length} • Tous les pseudos sont vérifiés côté serveur (blocklist). Filtre client ci-dessous à titre indicatif.</div>
-      {flagged.length>0 && <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-3 space-y-2"><p className="font-black text-sm text-red-700">⚠️ Pseudos à modérer ({flagged.length})</p>{flagged.map(u=><div key={u.id} className="flex justify-between items-center text-sm bg-white rounded-xl px-3 py-2"><span className="font-bold">{u.pseudo} <span className="text-xs text-zinc-500">{u.email}</span></span><button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full font-bold">Bannir</button></div>)}</div>}
+      <div className="flex justify-between items-center"><h2 className="font-black text-xl dark:text-zinc-100">🛡️ Admin — Modération</h2><button onClick={onBack} className="text-sm text-zinc-500 dark:text-zinc-400">← Retour</button></div>
+      <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-200 dark:border-amber-700 rounded-2xl p-3 text-xs dark:text-amber-200">Comptes: {users.length} • Signalés: {flagged.length} • Tous les pseudos sont vérifiés côté serveur (blocklist). Filtre client ci-dessous à titre indicatif.</div>
+      {flagged.length>0 && <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-700 rounded-2xl p-3 space-y-2"><p className="font-black text-sm text-red-700 dark:text-red-300">⚠️ Pseudos à modérer ({flagged.length})</p>{flagged.map(u=><div key={u.id} className="flex justify-between items-center text-sm bg-white dark:bg-zinc-700 rounded-xl px-3 py-2 dark:text-zinc-100"><span className="font-bold">{u.pseudo} <span className="text-xs text-zinc-500 dark:text-zinc-400">{u.email}</span></span><button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full font-bold">Bannir</button></div>)}</div>}
       <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="filtrer pseudo/email" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" />
-      {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
-      {msg && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {msg}</p>}
+      {err && <p className="text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 p-3 rounded-2xl">⚠️ {err}</p>}
+      {msg && <p className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 p-3 rounded-2xl">✅ {msg}</p>}
       <div className="space-y-2">
         {filtered.map(u=>(
-          <div key={u.id} className={`p-3 rounded-2xl border-2 flex justify-between items-center ${u.role==='admin'?'bg-amber-50 border-amber-300':'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-700'}`}>
+          <div key={u.id} className={`p-3 rounded-2xl border-2 flex justify-between items-center ${u.role==='admin'?'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700':'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-700'}`}>
             <div className="flex-1 min-w-0">
-              <p className="font-bold truncate flex items-center gap-2">{u.pseudo} {u.role==='admin' && <span className="bg-zinc-900 text-white text-[10px] px-2 py-0.5 rounded-full">ADMIN</span>} {isBlocked(u.pseudo) && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">À MODÉRER</span>}</p>
-              <p className="text-xs text-zinc-500 truncate">{u.email} • {u.poste} • {u.niveau} {u.emailVerified?'• ✓':'• ✗'}</p>
+              <p className="font-bold truncate flex items-center gap-2 dark:text-zinc-100">{u.pseudo} {u.role==='admin' && <span className="bg-zinc-900 dark:bg-zinc-700 text-white text-[10px] px-2 py-0.5 rounded-full">ADMIN</span>} {isBlocked(u.pseudo) && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">À MODÉRER</span>}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{u.email} • {u.poste} • {u.niveau} {u.emailVerified?'• ✓':'• ✗'}</p>
             </div>
             <div className="flex gap-1 shrink-0">
-              {u.role==='user' ? <button onClick={()=>changeRole(u.id,'admin')} className="bg-zinc-900 text-white px-3 py-1 rounded-full text-xs font-bold">→ admin</button> : <button onClick={()=>changeRole(u.id,'user')} className="bg-zinc-100 border px-3 py-1 rounded-full text-xs font-bold">→ user</button>}
+              {u.role==='user' ? <button onClick={()=>changeRole(u.id,'admin')} className="bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full text-xs font-bold">→ admin</button> : <button onClick={()=>changeRole(u.id,'user')} className="bg-zinc-100 dark:bg-zinc-700 border dark:border-zinc-600 dark:text-zinc-100 px-3 py-1 rounded-full text-xs font-bold">→ user</button>}
               <button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Suppr</button>
             </div>
           </div>
         ))}
       </div>
-      <button onClick={load} className="w-full bg-zinc-900 text-white py-3 rounded-2xl font-black">Rafraîchir</button>
+      <button onClick={load} className="w-full bg-zinc-900 dark:bg-zinc-700 text-white py-3 rounded-2xl font-black">Rafraîchir</button>
     </div>
   );
 };
