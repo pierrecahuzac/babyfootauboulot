@@ -15,6 +15,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   poste: text('poste').notNull().$type(),
   niveau: text('niveau').notNull().$type(),
+  role: text('role').notNull().default('user').$type(), // 'admin' | 'user'
   emailVerified: integer('email_verified').default(0),
   verificationToken: text('verification_token'),
   verificationExpires: timestamp('verification_expires', { withTimezone: true }),

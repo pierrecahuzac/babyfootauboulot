@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { eq, desc, and } from 'drizzle-orm';
 import { calculateClassement, normalizeMatch, validateMatchPayload } from './utils/stats.js';
 import { hashPassword, verifyPassword, signToken, authFromRequest, hashToken } from './utils/auth.js';
+import { isBlocked, blockedReason } from './utils/moderation.js';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'ligue';
 const genInvite = () => crypto.randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
@@ -71,7 +72,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
         pseudo TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2')),
-        niveau TEXT NOT NULL CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé')),
+        role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin','user')),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
@@ -123,6 +124,15 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
+    // roles admin/user
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('admin','user'))`);
+    // promeut les ADMIN_EMAILS en admin (ex: ADMIN_EMAILS=admin@example.com,root@ex.com)
+    try {
+      const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+      for (const em of adminEmails) {
+        await pool.query(`UPDATE users SET role='admin' WHERE LOWER(email)=$1`, [em]);
+      }
+    } catch {}
     await pool.query(`ALTER TABLE matches ALTER COLUMN team_a DROP NOT NULL`).catch(()=>{});
     await pool.query(`ALTER TABLE matches ALTER COLUMN team_b DROP NOT NULL`).catch(()=>{});
     await pool.query(`ALTER TABLE matches ALTER COLUMN score_a DROP NOT NULL`).catch(()=>{});
@@ -197,16 +207,19 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     if (!isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
     if (password.length < 6) return reply.code(400).send({ error: 'mot de passe trop court (6 min)' });
     if (!pseudo.trim() || pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
+    if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
     const emailNorm = email.trim().toLowerCase();
     const hash = await hashPassword(password);
     const verificationTokenRaw = genVerificationToken();
     const verificationTokenHash = hashToken(verificationTokenRaw);
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+    const initialRole = adminEmails.includes(emailNorm) ? 'admin' : 'user';
     const target = getUsersTable();
     const isUsers = target && target !== players;
     try {
       // drizzle insert avec colonnes v2 si dispo - on stocke le hash
-      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, emailVerified: 0, verificationToken: verificationTokenHash, verificationExpires };
+      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, role: initialRole, emailVerified: 0, verificationToken: verificationTokenHash, verificationExpires };
       let row;
       try {
         const [r] = await db.insert(target).values(values).returning();
@@ -218,7 +231,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
       }
       // assure via pool pour vraie DB (drizzle peut ignorer colonnes si schema pas à jour)
       try {
-        await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2, email_verified=0 WHERE id=$3`, [verificationTokenHash, verificationExpires, row.id]);
+        await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2, email_verified=0, role=$3 WHERE id=$4`, [verificationTokenHash, verificationExpires, initialRole, row.id]);
       } catch {}
       // sync pool pour mock: on met à jour l'objet en mémoire si pool query noop
       try {
@@ -231,14 +244,18 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
           found.verification_expires = verificationExpires;
           found.emailVerified = 0;
           found.email_verified = 0;
+          found.role = initialRole;
         }
       } catch {}
       if (isUsers) {
         try { await db.insert(players).values({ pseudo: pseudo.trim(), poste, niveau }).returning(); } catch {}
       }
-      const token = signToken({ id: row.id, email: row.email, pseudo: row.pseudo });
-      // en dev on renvoie le token de vérif pour debug (prod on l'enverrait par email)
-      return reply.code(201).send({ user: { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau, emailVerified: false }, token, verificationToken, message: 'Compte créé — vérifie ton email' });
+      const token = signToken({ id: row.id, email: row.email, pseudo: row.pseudo, role: initialRole });
+      const userOut = { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau, role: initialRole, emailVerified: false };
+      if (process.env.NODE_ENV === 'production') {
+        return reply.code(201).send({ user: userOut, token, message: 'Compte créé — vérifie ton email' });
+      }
+      return reply.code(201).send({ user: userOut, token, verificationToken: verificationTokenRaw, message: 'Compte créé — vérifie ton email' });
     } catch (e) {
       if (e.code === '23505') {
         const msg = e.detail?.includes('email') ? 'email déjà pris' : 'pseudo déjà pris';
@@ -269,9 +286,10 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     }
     recordLoginAttempt(rateKey, true);
     const emailVerified = Boolean(user.emailVerified ?? user.email_verified);
+    const role = user.role || 'user';
     // on autorise login même si non vérifié, mais on signale
-    const token = signToken({ id: user.id, email: user.email, pseudo: user.pseudo });
-    return reply.send({ user: { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, emailVerified }, token, emailVerified });
+    const token = signToken({ id: user.id, email: user.email, pseudo: user.pseudo, role });
+    return reply.send({ user: { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, role, emailVerified }, token, emailVerified, role });
   });
 
   app.get('/api/auth/me', async (req, reply) => {
@@ -282,7 +300,8 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     const user = rows.find(r => r.id === payload.id);
     if (!user) return reply.code(404).send({ error: 'utilisateur introuvable' });
     const emailVerified = Boolean(user.emailVerified ?? user.email_verified ?? 0);
-    return { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, emailVerified, email_verified: emailVerified ? 1 : 0 };
+    const role = user.role || 'user';
+    return { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, role, emailVerified, email_verified: emailVerified ? 1 : 0 };
   });
 
   app.post('/api/auth/logout', async () => ({ ok: true }));
@@ -291,9 +310,10 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
   app.post('/api/auth/verify-email', async (req, reply) => {
     const { token } = req.body || {};
     if (!token) return reply.code(400).send({ error: 'token requis' });
+    const hash = hashToken(token);
     const target = getUsersTable();
     const rows = await db.select().from(target);
-    const user = rows.find(r => (r.verificationToken ?? r.verification_token) === token);
+    const user = rows.find(r => (r.verificationToken ?? r.verification_token) === hash);
     if (!user) return reply.code(400).send({ error: 'token invalide' });
     const expires = user.verificationExpires ?? user.verification_expires;
     if (expires && new Date(expires) < new Date()) return reply.code(400).send({ error: 'token expiré' });
@@ -310,8 +330,9 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
       user.verificationExpires = null;
       user.verification_expires = null;
     } catch {}
-    const newToken = signToken({ id: user.id, email: user.email, pseudo: user.pseudo });
-    return { ok: true, user: { id: user.id, email: user.email, pseudo: user.pseudo, emailVerified: true }, token: newToken };
+    const role = user.role || 'user';
+    const newToken = signToken({ id: user.id, email: user.email, pseudo: user.pseudo, role });
+    return { ok: true, user: { id: user.id, email: user.email, pseudo: user.pseudo, role, emailVerified: true }, token: newToken };
   });
 
   app.post('/api/auth/resend-verification', async (req, reply) => {
@@ -323,19 +344,22 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     const user = rows.find(r => r.email?.toLowerCase() === emailNorm);
     if (!user) return reply.code(404).send({ error: 'utilisateur introuvable' });
     if (user.emailVerified ?? user.email_verified) return reply.code(400).send({ error: 'email déjà vérifié' });
-    const newToken = genVerificationToken();
+    const newTokenRaw = genVerificationToken();
+    const newTokenHash = hashToken(newTokenRaw);
     const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     try {
-      await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2 WHERE id=$3`, [newToken, newExpires, user.id]);
+      await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2 WHERE id=$3`, [newTokenHash, newExpires, user.id]);
     } catch {}
     try {
-      user.verificationToken = newToken;
-      user.verification_token = newToken;
+      user.verificationToken = newTokenHash;
+      user.verification_token = newTokenHash;
       user.verificationExpires = newExpires;
       user.verification_expires = newExpires;
     } catch {}
-    // en dev on renvoie le token
-    return { ok: true, verificationToken: newToken, message: 'Email de vérification renvoyé' };
+    if (process.env.NODE_ENV === 'production') {
+      return { ok: true, message: 'Email de vérification renvoyé' };
+    }
+    return { ok: true, verificationToken: newTokenRaw, message: 'Email de vérification renvoyé' };
   });
 
   // --- Forgot / Reset password ---
@@ -348,18 +372,22 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     const user = rows.find(r => r.email?.toLowerCase() === emailNorm);
     // toujours 200 pour ne pas leak l'existence de l'email (mais en dev on renvoie token si trouvé)
     if (!user) return { ok: true, message: 'Si ce compte existe, un email a été envoyé' };
-    const resetToken = genResetToken();
+    const resetTokenRaw = genResetToken();
+    const resetTokenHash = hashToken(resetTokenRaw);
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
     try {
-      await pool.query(`UPDATE users SET reset_token=$1, reset_expires=$2 WHERE id=$3`, [resetToken, resetExpires, user.id]);
+      await pool.query(`UPDATE users SET reset_token=$1, reset_expires=$2 WHERE id=$3`, [resetTokenHash, resetExpires, user.id]);
     } catch {}
     try {
-      user.resetToken = resetToken;
-      user.reset_token = resetToken;
+      user.resetToken = resetTokenHash;
+      user.reset_token = resetTokenHash;
       user.resetExpires = resetExpires;
       user.reset_expires = resetExpires;
     } catch {}
-    return { ok: true, resetToken, message: 'Si ce compte existe, un email a été envoyé' };
+    if (process.env.NODE_ENV === 'production') {
+      return { ok: true, message: 'Si ce compte existe, un email a été envoyé' };
+    }
+    return { ok: true, resetToken: resetTokenRaw, message: 'Si ce compte existe, un email a été envoyé' };
   });
 
   app.post('/api/auth/reset', async (req, reply) => {
@@ -367,9 +395,10 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     const pwd = newPassword || password;
     if (!token || !pwd) return reply.code(400).send({ error: 'token, newPassword requis' });
     if (pwd.length < 6) return reply.code(400).send({ error: 'mot de passe trop court (6 min)' });
+    const hashTok = hashToken(token);
     const target = getUsersTable();
     const rows = await db.select().from(target);
-    const user = rows.find(r => (r.resetToken ?? r.reset_token) === token);
+    const user = rows.find(r => (r.resetToken ?? r.reset_token) === hashTok);
     if (!user) return reply.code(400).send({ error: 'token invalide' });
     const expires = user.resetExpires ?? user.reset_expires;
     if (expires && new Date(expires) < new Date()) return reply.code(400).send({ error: 'token expiré' });
@@ -407,6 +436,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     }
     if (pseudo && pseudo.trim() !== user.pseudo) {
       if (pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
+      if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
       data.pseudo = pseudo.trim();
     }
     if (poste) data.poste = poste;
@@ -416,12 +446,15 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     if (emailChanged) {
       data.emailVerified = 0;
       data.email_verified = 0;
-      const vToken = genVerificationToken();
+      const vTokenRaw = genVerificationToken();
+      const vTokenHash = hashToken(vTokenRaw);
       const vExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      data.verificationToken = vToken;
-      data.verification_token = vToken;
+      data.verificationToken = vTokenHash;
+      data.verification_token = vTokenHash;
       data.verificationExpires = vExpires;
       data.verification_expires = vExpires;
+      // garde le raw pour réponse dev
+      data._verificationTokenRaw = vTokenRaw;
     }
     try {
       // drizzle: on fait un update via pool pour compat mock/real
@@ -429,6 +462,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
       const vals = [];
       let idx = 1;
       for (const [k, v] of Object.entries(data)) {
+        if (k.startsWith('_')) continue;
         let dbCol = k;
         if (k === 'emailVerified') dbCol = 'email_verified';
         else if (k === 'verificationToken') dbCol = 'verification_token';
@@ -439,9 +473,10 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
         vals.push(v);
       }
       vals.push(req.user.id);
-      const { rows: upd } = await pool.query(`UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, email, pseudo, poste, niveau, email_verified, created_at`, vals).catch(async () => {
+      const filteredData = Object.fromEntries(Object.entries(data).filter(([k])=>!k.startsWith('_')));
+      const { rows: upd } = await pool.query(`UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, email, pseudo, poste, niveau, role, email_verified, created_at`, vals).catch(async () => {
         // fallback drizzle pour mock
-        const [row] = await db.update(target).set(data).where(eq(target.id, req.user.id)).returning();
+        const [row] = await db.update(target).set(filteredData).where(eq(target.id, req.user.id)).returning();
         return { rows: row ? [row] : [] };
       });
       const updated = upd[0] || upd;
@@ -458,10 +493,14 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
       if (data.pseudo) {
         try { await pool.query(`UPDATE players SET pseudo=$1 WHERE pseudo=$2`, [data.pseudo, user.pseudo]); } catch {}
       }
-      const out = { id: updated.id ?? user.id, email: updated.email ?? data.email ?? user.email, pseudo: updated.pseudo ?? data.pseudo ?? user.pseudo, poste: updated.poste ?? data.poste ?? user.poste, niveau: updated.niveau ?? data.niveau ?? user.niveau, emailVerified: Boolean(updated.email_verified ?? updated.emailVerified ?? 0) };
-      // on ré-émet un token avec le nouveau pseudo/email
-      const token = signToken({ id: out.id, email: out.email, pseudo: out.pseudo });
-      const extra = emailChanged ? { verificationToken: data.verificationToken ?? data.verification_token, message: 'Email changé — revérifie ton adresse' } : {};
+      const out = { id: updated.id ?? user.id, email: updated.email ?? data.email ?? user.email, pseudo: updated.pseudo ?? data.pseudo ?? user.pseudo, poste: updated.poste ?? data.poste ?? user.poste, niveau: updated.niveau ?? data.niveau ?? user.niveau, role: user.role || 'user', emailVerified: Boolean(updated.email_verified ?? updated.emailVerified ?? 0) };
+      // on ré-émet un token avec le nouveau pseudo/email/role
+      const token = signToken({ id: out.id, email: out.email, pseudo: out.pseudo, role: out.role });
+      let extra = {};
+      if (emailChanged) {
+        extra.message = 'Email changé — revérifie ton adresse';
+        if (process.env.NODE_ENV !== 'production' && data._verificationTokenRaw) extra.verificationToken = data._verificationTokenRaw;
+      }
       return { user: out, token, ...extra };
     } catch (e) {
       if (e.code === '23505') {
@@ -528,6 +567,70 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
     return { ok: true };
   });
 
+  const isAdmin = (user) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    const envAdmins = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+    if (envAdmins.includes((user.email||'').toLowerCase())) return true;
+    return false;
+  };
+  const requireAdmin = async (req, reply) => {
+    const payload = authFromRequest(req);
+    let user = payload;
+    if (!payload) {
+      const cookieToken = req.cookies?.token;
+      if (cookieToken) {
+        try { const { verifyToken } = await import('./utils/auth.js'); user = verifyToken(cookieToken); } catch {}
+      }
+    }
+    if (!user) { reply.code(401).send({ error: 'auth requise' }); return; }
+    req.user = user;
+    if (!isAdmin(user)) { reply.code(403).send({ error: 'admin requis' }); return; }
+  };
+
+  // --- Admin : gestion users/roles ---
+  app.get('/api/admin/users', { preHandler: requireAdmin }, async () => {
+    const target = getUsersTable();
+    try {
+      const rows = await db.select().from(target);
+      return rows.map(u => ({ id: u.id, email: u.email, pseudo: u.pseudo, poste: u.poste, niveau: u.niveau, role: u.role || 'user', emailVerified: Boolean(u.emailVerified ?? u.email_verified), createdAt: u.createdAt || u.created_at }));
+    } catch {
+      const { rows } = await pool.query(`SELECT id, email, pseudo, poste, niveau, role, email_verified, created_at FROM users ORDER BY created_at DESC`);
+      return rows.map(r => ({ id: r.id, email: r.email, pseudo: r.pseudo, poste: r.poste, niveau: r.niveau, role: r.role || 'user', emailVerified: Boolean(r.email_verified), createdAt: r.created_at }));
+    }
+  });
+
+  app.patch('/api/admin/users/:id/role', { preHandler: requireAdmin }, async (req, reply) => {
+    const id = Number(req.params.id);
+    const { role } = req.body || {};
+    if (!['admin','user'].includes(role)) return reply.code(400).send({ error: 'role doit être admin ou user' });
+    if (Number(req.user.id) === id && role !== 'admin') return reply.code(400).send({ error: 'ne peut pas se rétrograder soi-même' });
+    try {
+      const { rows } = await pool.query(`UPDATE users SET role=$1 WHERE id=$2 RETURNING id, email, pseudo, role`, [role, id]);
+      if (!rows[0]) return reply.code(404).send({ error: 'utilisateur introuvable' });
+      return rows[0];
+    } catch {
+      try {
+        const [row] = await db.update(getUsersTable()).set({ role }).where(eq(getUsersTable().id, id)).returning();
+        if (!row) return reply.code(404).send({ error: 'utilisateur introuvable' });
+        return row;
+      } catch (e) { throw e; }
+    }
+  });
+
+  app.delete('/api/admin/users/:id', { preHandler: requireAdmin }, async (req, reply) => {
+    const id = Number(req.params.id);
+    if (Number(req.user.id) === id) return reply.code(400).send({ error: 'ne peut pas se supprimer soi-même' });
+    try {
+      await pool.query(`DELETE FROM ligue_members WHERE user_id=$1`, [id]);
+      await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+      await pool.query(`DELETE FROM players WHERE pseudo IN (SELECT pseudo FROM users WHERE id=$1)`, [id]).catch(()=>{});
+    } catch {
+      try { await db.delete(getUsersTable()).where(eq(getUsersTable().id, id)); } catch {}
+    }
+    return { ok: true };
+  });
+
   const isMember = async (ligueId, userId) => {
     if (!liguesTable || !membersTable) return true; // tests mock sans ligues -> on autorise
     try {
@@ -542,6 +645,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
   app.post('/api/ligues', { preHandler: requireAuth }, async (req, reply) => {
     const { name, description } = req.body;
     if (!name) return reply.code(400).send({ error: 'name requis' });
+    if (isBlocked(name.trim())) return reply.code(400).send({ error: blockedReason(name.trim()) });
     const slug = genSlug(name);
     const invite = genInvite();
     const ownerId = req.user.id;
@@ -704,6 +808,7 @@ export const createApp = ({ db, pool, players, matches, users, ligues, ligueMemb
   app.post('/api/players', async (req, reply) => {
     const { pseudo, poste, niveau } = req.body;
     if (!pseudo || !poste || !niveau) return reply.code(400).send({ error: 'pseudo, poste, niveau requis' });
+    if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
     try {
       const [row] = await db.insert(players).values({ pseudo: pseudo.trim(), poste, niveau }).returning();
       return reply.code(201).send(row);

@@ -113,7 +113,8 @@ const App = () => {
             <button onClick={toggleTheme} className="w-8 h-8 rounded-full bg-white/20 dark:bg-zinc-700 backdrop-blur flex items-center justify-center text-sm" title={theme==='dark' ? 'Passer en clair' : 'Passer en sombre'}>{theme==='dark' ? '☀️' : '🌙'}</button>
             {user ? (
               <>
-                <span className="text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-full font-bold hidden sm:inline">{user.pseudo}</span>
+                <span className="text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-full font-bold hidden sm:inline flex items-center gap-1">{user.pseudo} {user.role==='admin' && <span className="bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-full text-[10px]">ADMIN</span>}</span>
+                {user.role==='admin' && <button onClick={()=>setView('admin')} className="text-xs bg-amber-400 text-amber-950 px-3 py-1 rounded-full font-black">Admin</button>}
                 <button onClick={logout} className="text-xs bg-white text-emerald-700 dark:text-zinc-900 px-3 py-1 rounded-full font-bold shadow dark:bg-zinc-800">Sortir</button>
               </>
             ) : (
@@ -125,7 +126,7 @@ const App = () => {
           </div>
         </header>
 
-        {user && <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-2 text-xs text-emerald-800 flex justify-between"><span>👋 {user.pseudo} • {user.poste} • {user.niveau}</span><span className="hidden sm:inline">{user.email}</span></div>}
+        {user && <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-2 text-xs text-emerald-800 flex justify-between"><span>👋 {user.pseudo} • {user.poste} • {user.niveau} {user.role==='admin' && '• 🛡️ admin'}</span><span className="hidden sm:inline">{user.email}</span></div>}
         {user && !(user.emailVerified ?? user.email_verified) && (
           <div className="bg-amber-100 border-b border-amber-300 px-5 py-2 text-xs text-amber-900 flex justify-between items-center">
             <span>⚠️ Email non vérifié — vérifie ta boîte</span>
@@ -152,6 +153,7 @@ const App = () => {
           {view === 'reset' && <Reset onBack={()=>setView('login')} onDone={()=>setView('login')} />}
           {view === 'verify' && <VerifyEmail user={user} onBack={()=>setView('accueil')} onVerified={(data)=>{ setUser(data.user); setToken(data.token); setView('accueil'); loadMe(); }} />}
           {view === 'profil' && <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} />}
+          {view === 'admin' && <Admin user={user} onBack={()=>setView('accueil')} />}
           {view === 'ligues' && <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} />}
           {view === 'match' && <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); setView('stats'); }} onBack={() => setView('accueil')} />}
           {view === 'stats' && <Stats classement={stats} matches={matches} />}
@@ -469,6 +471,68 @@ const VerifyEmail = ({ user, onBack, onVerified }) => {
         <button onClick={resend} className="w-full bg-amber-500 text-white py-3 rounded-2xl font-black">Renvoyer</button>
       </div>
       <button onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
+    </div>
+  );
+};
+
+const Admin = ({ user, onBack }) => {
+  const [users, setUsers] = useState([]);
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+  const [filter, setFilter] = useState('');
+  const isBlocked = (pseudo) => {
+    const blocked = ['hitler','nazi','facho','raciste','antisemite']; // exemple — vrai filtre côté serveur plus complet
+    const norm = pseudo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    return blocked.some(w => norm.includes(w));
+  };
+  const load = async () => {
+    setErr(''); setMsg('');
+    const r = await authFetch('/api/admin/users');
+    if (!r.ok) { setErr((await r.json()).error || 'accès refus'); return; }
+    setUsers(await r.json());
+  };
+  useEffect(()=>{ if(user?.role==='admin') load(); },[user]);
+  const changeRole = async (id, role) => {
+    setErr(''); setMsg('');
+    const r = await authFetch(`/api/admin/users/${id}/role`, { method:'PATCH', body: JSON.stringify({ role }) });
+    const b = await r.json();
+    if (!r.ok) { setErr(b.error); return; }
+    setMsg(`Role ${b.pseudo} -> ${b.role}`);
+    load();
+  };
+  const del = async (id, pseudo) => {
+    if (!confirm(`Supprimer ${pseudo} ?`)) return;
+    const r = await authFetch(`/api/admin/users/${id}`, { method:'DELETE' });
+    if (!r.ok) { setErr((await r.json()).error); return; }
+    setMsg(`Supprimé ${pseudo}`);
+    load();
+  };
+  if (user?.role!=='admin') return <div className="p-8 text-center"><p className="font-black">🔒 Admin requis</p><p className="text-sm text-zinc-500">Connecte-toi avec admin@example.com</p><button onClick={onBack} className="mt-3 text-sm text-zinc-500">← Retour</button></div>;
+  const filtered = users.filter(u => !filter || u.pseudo.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
+  const flagged = users.filter(u => isBlocked(u.pseudo));
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center"><h2 className="font-black text-xl">🛡️ Admin — Modération</h2><button onClick={onBack} className="text-sm text-zinc-500">← Retour</button></div>
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 text-xs">Comptes: {users.length} • Signalés: {flagged.length} • Tous les pseudos sont vérifiés côté serveur (blocklist). Filtre client ci-dessous à titre indicatif.</div>
+      {flagged.length>0 && <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-3 space-y-2"><p className="font-black text-sm text-red-700">⚠️ Pseudos à modérer ({flagged.length})</p>{flagged.map(u=><div key={u.id} className="flex justify-between items-center text-sm bg-white rounded-xl px-3 py-2"><span className="font-bold">{u.pseudo} <span className="text-xs text-zinc-500">{u.email}</span></span><button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full font-bold">Bannir</button></div>)}</div>}
+      <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="filtrer pseudo/email" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" />
+      {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
+      {msg && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {msg}</p>}
+      <div className="space-y-2">
+        {filtered.map(u=>(
+          <div key={u.id} className={`p-3 rounded-2xl border-2 flex justify-between items-center ${u.role==='admin'?'bg-amber-50 border-amber-300':'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-700'}`}>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold truncate flex items-center gap-2">{u.pseudo} {u.role==='admin' && <span className="bg-zinc-900 text-white text-[10px] px-2 py-0.5 rounded-full">ADMIN</span>} {isBlocked(u.pseudo) && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">À MODÉRER</span>}</p>
+              <p className="text-xs text-zinc-500 truncate">{u.email} • {u.poste} • {u.niveau} {u.emailVerified?'• ✓':'• ✗'}</p>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              {u.role==='user' ? <button onClick={()=>changeRole(u.id,'admin')} className="bg-zinc-900 text-white px-3 py-1 rounded-full text-xs font-bold">→ admin</button> : <button onClick={()=>changeRole(u.id,'user')} className="bg-zinc-100 border px-3 py-1 rounded-full text-xs font-bold">→ user</button>}
+              <button onClick={()=>del(u.id, u.pseudo)} className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Suppr</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={load} className="w-full bg-zinc-900 text-white py-3 rounded-2xl font-black">Rafraîchir</button>
     </div>
   );
 };
