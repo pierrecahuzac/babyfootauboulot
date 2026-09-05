@@ -14,10 +14,24 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
     } catch { return false; }
   };
 
+  const isPublicLigue = async (ligueId) => {
+    try {
+      const rows = await db.select().from(liguesTable);
+      const l = rows.find(r => Number(r.id) === Number(ligueId));
+      if (l) return (l.isPrivate ?? l.is_private ?? 1) === 0;
+    } catch {}
+    try {
+      const { rows } = await pool.query(`SELECT is_private FROM ligues WHERE id=$1`, [ligueId]);
+      if (rows[0]) return Number(rows[0].is_private) === 0;
+    } catch {}
+    return false;
+  };
+
   const getLigueId = (req) => Number(req.query.ligue_id || req.body?.ligue_id || req.headers['x-ligue-id']) || null;
 
   const assertMember = async (req, reply, ligueId) => {
     if (!ligueId) return true;
+    if (await isPublicLigue(ligueId)) return true;
     if (!req.user && !authFromRequest(req)) {
       const payload = authFromRequest(req);
       if (!payload) { reply.code(401).send({ error: 'auth requise pour ligue' }); return false; }

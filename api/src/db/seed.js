@@ -200,9 +200,11 @@ async function main() {
     const invite = genInvite();
     const owner = users[Math.floor(Math.random() * users.length)];
     try {
+      // Démo prod : ligues publiques (is_private=0) pour que tout le monde voit les fake datas
+      const isPrivate = isDemo ? 0 : 1;
       const { rows } = await pool.query(
-        `INSERT INTO ligues (name, slug, description, owner_id, invite_code) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-        [name, slug, `Ligue ${name} — démo`, owner.id, invite]
+        `INSERT INTO ligues (name, slug, description, owner_id, invite_code, is_private) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [name, slug, `Ligue ${name} — démo`, owner.id, invite, isPrivate]
       );
       const ligueId = rows[0].id;
       ligues.push({ id: ligueId, name, invite, ownerId: owner.id });

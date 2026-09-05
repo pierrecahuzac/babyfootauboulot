@@ -40,14 +40,18 @@ export default async function liguesRoutes(app, { db, pool, players, matches, us
     try {
       const allMembers = await db.select().from(membersTable);
       const myLigueIds = allMembers.filter(m => Number(m.userId ?? m.user_id) === Number(req.user.id)).map(m => Number(m.ligueId ?? m.ligue_id));
-      if (!myLigueIds.length) return [];
       const allLigues = await db.select().from(liguesTable);
-      return allLigues.filter(l => myLigueIds.includes(Number(l.id))).map(l => ({
+      // Mode démo : ligues publiques (is_private=0) visibles par tous, privées seulement si membre
+      return allLigues.filter(l => {
+        const isPrivate = l.isPrivate ?? l.is_private ?? 1;
+        if (isPrivate === 0) return true;
+        return myLigueIds.includes(Number(l.id));
+      }).map(l => ({
         ...l,
         invite_code: l.inviteCode ?? l.invite_code,
       }));
     } catch {
-      const { rows } = await pool.query(`SELECT l.* FROM ligues l JOIN ligue_members m ON m.ligue_id=l.id WHERE m.user_id=$1 ORDER BY l.created_at DESC`, [req.user.id]).catch(()=>({rows:[]}));
+      const { rows } = await pool.query(`SELECT l.* FROM ligues l WHERE l.is_private=0 OR l.id IN (SELECT ligue_id FROM ligue_members WHERE user_id=$1) ORDER BY l.created_at DESC`, [req.user.id]).catch(()=>({rows:[]}));
       return rows;
     }
   });
