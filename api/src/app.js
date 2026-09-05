@@ -83,6 +83,8 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS poste TEXT CHECK (poste IN ('Attaque','Défense','Les 2'))`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS niveau TEXT CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé'))`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INT DEFAULT 0`);
+    // Vérification email désactivée — auto-vérifie les comptes existants
+    await pool.query(`UPDATE users SET email_verified=1 WHERE email_verified=0`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);

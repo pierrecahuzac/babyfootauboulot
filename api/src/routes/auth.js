@@ -23,15 +23,13 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
     const emailNorm = email.trim().toLowerCase();
     const hash = await hashPassword(password);
-    const verificationTokenRaw = genVerificationToken();
-    const verificationTokenHash = hashToken(verificationTokenRaw);
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Vérification email désactivée (pas de SMTP) — auto-vérifié. TODO: réactiver quand email actif (voir commit avant a399fc3)
     const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
     const initialRole = adminEmails.includes(emailNorm) ? 'admin' : 'user';
     const target = getUsersTable();
     const isUsers = target && target !== players;
     try {
-      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, role: initialRole, emailVerified: 0, verificationToken: verificationTokenHash, verificationExpires };
+      const values = { email: emailNorm, pseudo: pseudo.trim(), passwordHash: hash, poste, niveau, role: initialRole, emailVerified: 1, verificationToken: null, verificationExpires: null };
       let row;
       try {
         const [r] = await db.insert(target).values(values).returning();
@@ -41,18 +39,18 @@ export default async function authRoutes(app, { db, pool, users, players }) {
         throw e;
       }
       try {
-        await pool.query(`UPDATE users SET verification_token=$1, verification_expires=$2, email_verified=0, role=$3 WHERE id=$4`, [verificationTokenHash, verificationExpires, initialRole, row.id]);
+        await pool.query(`UPDATE users SET email_verified=1, verification_token=NULL, verification_expires=NULL, role=$1 WHERE id=$2`, [initialRole, row.id]);
       } catch {}
       try {
         const rows = await db.select().from(target);
         const found = rows.find(r => r.id === row.id);
         if (found) {
-          found.verificationToken = verificationTokenHash;
-          found.verification_token = verificationTokenHash;
-          found.verificationExpires = verificationExpires;
-          found.verification_expires = verificationExpires;
-          found.emailVerified = 0;
-          found.email_verified = 0;
+          found.verificationToken = null;
+          found.verification_token = null;
+          found.verificationExpires = null;
+          found.verification_expires = null;
+          found.emailVerified = 1;
+          found.email_verified = 1;
           found.role = initialRole;
         }
       } catch {}
@@ -61,11 +59,8 @@ export default async function authRoutes(app, { db, pool, users, players }) {
       }
       const token = signToken({ id: row.id, email: row.email, pseudo: row.pseudo, role: initialRole });
       reply.setCookie('token', token, cookieOpts);
-      const userOut = { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau, role: initialRole, emailVerified: false };
-      if (process.env.NODE_ENV === 'production') {
-        return reply.code(201).send({ user: userOut, token, message: 'Compte créé — vérifie ton email' });
-      }
-      return reply.code(201).send({ user: userOut, token, verificationToken: verificationTokenRaw, message: 'Compte créé — vérifie ton email' });
+      const userOut = { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau, role: initialRole, emailVerified: true };
+      return reply.code(201).send({ user: userOut, token, message: 'Compte créé' });
     } catch (e) {
       if (e.code === '23505') {
         const msg = e.detail?.includes('email') ? 'email déjà pris' : 'pseudo déjà pris';
@@ -123,6 +118,8 @@ export default async function authRoutes(app, { db, pool, users, players }) {
   });
 
   app.post('/api/auth/verify-email', async (req, reply) => {
+    // Vérification email désactivée — tous les comptes sont auto-vérifiés
+    return reply.code(410).send({ error: 'Vérification email désactivée' });
     const { token } = req.body || {};
     if (!token) return reply.code(400).send({ error: 'token requis' });
     const hash = hashToken(token);
@@ -151,6 +148,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
   });
 
   app.post('/api/auth/resend-verification', async (req, reply) => {
+    return reply.code(410).send({ error: 'Vérification email désactivée' });
     const rateKeyResend = getIpKey(req, 'resend');
     if (isGenericRateLimited(rateKeyResend)) return reply.code(429).send({ error: 'trop de demandes, réessaie dans 15 minutes' });
     recordGenericAttempt(rateKeyResend);
@@ -263,16 +261,9 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     if (niveau) data.niveau = niveau;
     if (!Object.keys(data).length) return reply.code(400).send({ error: 'rien à mettre à jour' });
     if (emailChanged) {
-      data.emailVerified = 0;
-      data.email_verified = 0;
-      const vTokenRaw = genVerificationToken();
-      const vTokenHash = hashToken(vTokenRaw);
-      const vExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      data.verificationToken = vTokenHash;
-      data.verification_token = vTokenHash;
-      data.verificationExpires = vExpires;
-      data.verification_expires = vExpires;
-      data._verificationTokenRaw = vTokenRaw;
+      // Vérification désactivée — email reste vérifié
+      data.emailVerified = 1;
+      data.email_verified = 1;
     }
     try {
       const ALLOWED_COLS = new Set(['email','pseudo','poste','niveau','email_verified','verification_token','verification_expires']);
@@ -302,8 +293,8 @@ export default async function authRoutes(app, { db, pool, users, players }) {
       try {
         Object.assign(user, data);
         if (emailChanged) {
-          user.emailVerified = 0;
-          user.email_verified = 0;
+          user.emailVerified = 1;
+          user.email_verified = 1;
         }
       } catch {}
       if (data.pseudo) {
@@ -314,8 +305,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
       reply.setCookie('token', token, cookieOpts);
       let extra = {};
       if (emailChanged) {
-        extra.message = 'Email changé — revérifie ton adresse';
-        if (process.env.NODE_ENV !== 'production' && data._verificationTokenRaw) extra.verificationToken = data._verificationTokenRaw;
+        extra.message = 'Email changé';
       }
       return { user: out, token, ...extra };
     } catch (e) {

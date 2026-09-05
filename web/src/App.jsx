@@ -5,7 +5,6 @@ import Register from './pages/Register.jsx';
 import Login from './pages/Login.jsx';
 import Forgot from './pages/Forgot.jsx';
 import Reset from './pages/Reset.jsx';
-import VerifyEmail from './pages/VerifyEmail.jsx';
 import Ligues from './pages/Ligues.jsx';
 import Profil from './pages/Profil.jsx';
 import Inscription from './pages/Inscription.jsx';
@@ -20,7 +19,6 @@ const API = import.meta.env.VITE_API_URL || '';
 const App = () => {
   const [view, setView] = useState(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('verify')) return 'verify';
     if (p.get('reset')) return 'reset';
     const h = (window.location.hash || '').replace(/^#/, '');
     if (h === 'register' || h === 'inscription') return 'register';
@@ -47,7 +45,7 @@ const App = () => {
   // nettoie les tokens dans l'URL (anti Referer/history leak R7) + gère #register/#inscription depuis landing
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.has('verify') || p.has('reset') || p.has('token')) {
+    if (p.has('reset') || p.has('token')) {
       window.history.replaceState({}, '', window.location.pathname);
     }
     const handleHash = () => {
@@ -168,12 +166,6 @@ const App = () => {
         </header>
 
         {user && <div className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 px-5 py-2 text-xs text-zinc-600 dark:text-zinc-400 flex justify-between"><span>{user.pseudo} · {user.poste} · {user.niveau}</span><span className="hidden sm:inline text-zinc-500">{user.email}</span></div>}
-        {user && !(user.emailVerified ?? user.email_verified) && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 px-5 py-2.5 text-xs text-amber-800 dark:text-amber-300 flex justify-between items-center">
-            <span>Email non vérifié — vérifie ta boîte</span>
-            <button onClick={()=>setView('verify')} className="bg-amber-600 text-white px-3 py-1 rounded-full font-medium text-xs">Vérifier</button>
-          </div>
-        )}
         {user && (
           <div className="px-4 sm:px-5 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2 text-xs">
             <span className="font-semibold text-zinc-500 dark:text-zinc-400 tracking-wide text-[11px] uppercase">Ligue</span>
@@ -192,7 +184,6 @@ const App = () => {
           {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
           {view === 'forgot' && <Forgot onBack={()=>setView('login')} onReset={(t)=>{ if(t) setPendingResetToken(t); setView('reset'); }} />}
           {view === 'reset' && <Reset initialToken={pendingResetToken} onBack={()=>setView('login')} onDone={()=>{ setPendingResetToken(''); setView('login'); }} />}
-          {view === 'verify' && <VerifyEmail user={user} onBack={()=>safeSetView('accueil')} onVerified={(data)=>{ setUser(data.user); setToken(data.token); safeSetView('accueil'); loadMe(); }} />}
           {view === 'profil' && (user ? <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir ton profil</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'ligues' && (user ? <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
