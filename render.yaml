@@ -2,7 +2,7 @@ services:
   - type: web
     name: babyfootauboulot
     runtime: node
-    plan: starter
+    plan: free # gratuit sans CB (sleep après 15min) - starter = 7$/mo
     rootDir: api
     buildCommand: npm ci --omit=dev
     startCommand: npm start
@@ -12,17 +12,14 @@ services:
         value: production
       - key: PORT
         value: 10000
-        sync: false
       - key: DATABASE_URL
         sync: false # Neon pooler ex: postgresql://neondb_owner:xxx@ep-xxx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       - key: JWT_SECRET
         sync: false # 32+ chars, génère avec: openssl rand -base64 48
       - key: CORS_ORIGIN
-        value: https://babyfootauboulot.vercel.app,https://babyfootauboulot-landing.vercel.app
-        sync: false
+        value: https://app.babyfootauboulot.vercel.app,https://babyfootauboulot.vercel.app
       - key: ADMIN_EMAILS
         value: admin@example.com
-        sync: false
       # Optionnel
       # - key: JWT_EXPIRES
       #   value: 7d
