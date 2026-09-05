@@ -48,10 +48,10 @@ const randomDate = (daysAgo = 30) => {
 
 const args = process.argv.slice(2);
 const shouldClean = args.includes('--clean') || args.includes('-c');
-// Mode démo prod : 10 users + 5 ligues + ~70 matchs (top) (si --demo ou SEED_DEMO=1)
+// Mode démo prod : 15 users + 5 ligues + ~70 matchs (top) (si --demo ou SEED_DEMO=1)
 // Sinon mode complet dev : 30 users + 5 ligues + 120 matchs
 const isDemo = args.includes('--demo') || process.env.SEED_DEMO === '1';
-const countUsers = isDemo ? 10 : 30;
+const countUsers = isDemo ? 15 : 30;
 const ligueCount = isDemo ? 5 : 5;
 
 async function main() {
