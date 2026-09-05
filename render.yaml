@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: babyfootauboulot-api
+    name: babyfootauboulot
     runtime: node
     plan: starter
     rootDir: api
@@ -14,7 +14,7 @@ services:
         value: 10000
         sync: false
       - key: DATABASE_URL
-        sync: false # Neon URL avec ?sslmode=require
+        sync: false # Neon pooler ex: postgresql://neondb_owner:xxx@ep-xxx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       - key: JWT_SECRET
         sync: false # 32+ chars, génère avec: openssl rand -base64 48
       - key: CORS_ORIGIN
