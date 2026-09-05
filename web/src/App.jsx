@@ -177,7 +177,7 @@ const App = () => {
           </div>
         )}
 
-        <main className="p-4 sm:p-5 flex-1 pb-20 bg-white dark:bg-zinc-900">
+        <main className="p-4 sm:p-5 flex-1 pb-28 bg-white dark:bg-zinc-900">
           {view === 'accueil' && <Accueil players={players} onNav={safeSetView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>safeSetView('ligues')} onRoadmap={()=>setView('roadmap')} />}
           {view === 'inscription' && (user ? <Inscription onDone={() => { refresh(); safeSetView('accueil'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour ajouter un invité</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('login')} />}
