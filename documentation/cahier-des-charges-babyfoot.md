@@ -1,4 +1,4 @@
-# Cahier des charges — Babyfoot au boulot — v2 (MAJ 2026-09-04)
+# Cahier des charges — Babyfoot au boulot — v2 (MAJ 2026-09-05)
 
 ## 1. Contexte et objectif
 App mobile-first pour organiser les parties de babyfoot entre collègues *et* ouverture internet. Deux vitrines : **babyfootauboulot.dev** (landing Astro) → **app.babyfootauboulot.dev** (app React). Ligues privées isolées (boulot ≠ inconnus), auth email+mdp, stats live.
@@ -96,4 +96,4 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - v1 : auth complexe, ELO, native — **v2 auth email+mdp et ligues ont été ajoutés + rôles admin/user + modération + seed démo + MVC**, reste : ELO auto, native, OAuth, notifications, filtres période
 
 ---
-*MAJ 2026-09-04 — Code : `api/src/app.js` (`151`L) + `routes/*` `middleware/auth` `utils/helpers|moderation`, `api/src/db/schema.js` (`role`), `web/src/pages/*` (`12` pages), `landing/src/pages/index.astro`, `docker-compose.yml`, `Caddyfile.example` — HMR actif, `babyfootauboulot.dev`.*
+*MAJ 2026-09-05 — Code : `api/src/app.js` (`151`L) + `routes/*` `middleware/auth` `utils/helpers|moderation`, `api/src/db/schema.js` (`role`), `web/src/pages/*` (`12` pages), `landing/src/pages/index.astro`, `docker-compose.yml`, `Caddyfile.example` — HMR actif, `babyfootauboulot.dev`.*
