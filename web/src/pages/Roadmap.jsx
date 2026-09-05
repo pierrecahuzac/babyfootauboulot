@@ -17,7 +17,7 @@ const Roadmap = () => {
           <div key={i} className="p-3.5 flex items-center gap-3">
             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${t.done ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-500'}`}>{t.done ? '✓' : '○'}</span>
             <span className={`flex-1 text-sm ${t.done ? 'text-zinc-500 line-through' : 'text-zinc-900 dark:text-zinc-100 font-medium'}`}>{t.label}</span>
-            <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${t.type==='revision' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20' : t.type==='bugfix' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-600'}`}>v{t.version}</span>
+            <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${t.type==='revision' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20' : (t.type==='bugfix' || t.type==='fix') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-600'}`}>v{t.version}</span>
             {t.badge && <span className="text-xs bg-violet-600 text-white px-2 py-0.5 rounded-full font-semibold">{t.badge}</span>}
           </div>
         ))}
