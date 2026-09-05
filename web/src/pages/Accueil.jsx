@@ -94,7 +94,14 @@ const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-zinc-900 dark:text-zinc-100 truncate text-sm">{p.pseudo}</div>
                   <div className="flex gap-1.5 mt-1">
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${posteColor(p.poste)}`}>{p.poste}</span>
+                    {(p.poste === 'Attaque / Défense' || p.poste === 'Les 2') ? (
+                      <>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${posteColor('Attaque')}`}>Attaque</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${posteColor('Défense')}`}>Défense</span>
+                      </>
+                    ) : (
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${posteColor(p.poste)}`}>{p.poste}</span>
+                    )}
                     <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${niveauColor(p.niveau)}`}>{p.niveau}</span>
                   </div>
                 </div>
