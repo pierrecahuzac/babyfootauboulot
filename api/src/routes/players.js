@@ -49,20 +49,38 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
 
   app.get('/api/players', async (req, reply) => {
     const ligueId = getLigueId(req);
+    const { niveau, poste } = req.query;
+
     if (ligueId) {
       if (!await assertMember(req, reply, ligueId)) return;
       try {
         const members = await db.select().from(membersTable);
         const userIds = members.filter(m => Number(m.ligueId ?? m.ligue_id) === ligueId).map(m => Number(m.userId ?? m.user_id));
-        const allUsers = await db.select().from(getUsersTable());
+        let allUsers = await db.select().from(getUsersTable());
+        
+        // Appliquer filtres
+        if (niveau) allUsers = allUsers.filter(u => u.niveau === niveau);
+        if (poste) allUsers = allUsers.filter(u => u.poste === poste);
+        
         const filtered = allUsers.filter(u => userIds.includes(Number(u.id)));
         return filtered.map(u => ({ id: u.id, pseudo: u.pseudo, poste: u.poste, niveau: u.niveau, createdAt: u.createdAt || u.created_at }));
       } catch {
-        const { rows } = await pool.query(`SELECT u.id, u.pseudo, u.poste, u.niveau, u.created_at FROM users u JOIN ligue_members m ON m.user_id=u.id WHERE m.ligue_id=$1 ORDER BY u.created_at`, [ligueId]);
+        let sql = `SELECT u.id, u.pseudo, u.poste, u.niveau, u.created_at FROM users u JOIN ligue_members m ON m.user_id=u.id WHERE m.ligue_id=$1`;
+        const params = [ligueId];
+        if (niveau) { sql += ` AND u.niveau=$${params.length + 1}`; params.push(niveau); }
+        if (poste) { sql += ` AND u.poste=$${params.length + 1}`; params.push(poste); }
+        sql += ` ORDER BY u.created_at`;
+        const { rows } = await pool.query(sql, params);
         return rows;
       }
     }
-    return db.select().from(players).orderBy(players.createdAt);
+    
+    // Pas de ligueId, filtrer directement sur la table players
+    let query = db.select().from(players);
+    if (niveau) query = query.where(eq(players.niveau, niveau));
+    if (poste) query = query.where(eq(players.poste, poste));
+    
+    return query.orderBy(players.createdAt);
   });
 
   app.post('/api/players', async (req, reply) => {

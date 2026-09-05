@@ -3,6 +3,15 @@ import { posteColor, niveauColor, initials, avatarBg } from '../utils/helpers.js
 
 const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
   const [showCode, setShowCode] = useState(false);
+  const [filterPoste, setFilterPoste] = useState('');
+  const [filterNiveau, setFilterNiveau] = useState('');
+
+  const filteredPlayers = players.filter(p => {
+    if (filterPoste && p.poste !== filterPoste) return false;
+    if (filterNiveau && p.niveau !== filterNiveau) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-4">
       {user && ligue && (
@@ -76,17 +85,30 @@ const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
           <div className="flex items-center justify-between pt-2">
             <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               Joueurs inscrits
-              <span className="bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white text-xs px-2 py-0.5 rounded-full font-medium">{players.length}</span>
+              <span className="bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white text-xs px-2 py-0.5 rounded-full font-medium">{filteredPlayers.length}</span>
             </h2>
+            <div className="flex gap-2">
+              <select onChange={(e) => setFilterPoste(e.target.value)} value={filterPoste} className="text-xs border border-zinc-300 dark:border-zinc-600 rounded-lg p-1 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+                <option value="">Tous les postes</option>
+                <option value="Attaque">Attaque</option>
+                <option value="Défense">Défense</option>
+                <option value="Les 2">Les 2</option>
+              </select>
+              <select onChange={(e) => setFilterNiveau(e.target.value)} value={filterNiveau} className="text-xs border border-zinc-300 dark:border-zinc-600 rounded-lg p-1 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+                <option value="">Tous les niveaux</option>
+                <option value="Débutant">Débutant</option>
+                <option value="Intermédiaire">Intermédiaire</option>
+                <option value="Avancé">Avancé</option>
+              </select>
+            </div>
           </div>
           <div className="border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden bg-white dark:bg-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-700">
-            {players.length === 0 && (
+            {filteredPlayers.length === 0 && (
               <div className="p-8 text-center">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">Aucun joueur pour le moment</p>
-                <p className="text-xs text-zinc-400 mt-1">Crée ton compte !</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">Aucun joueur correspondant</p>
               </div>
             )}
-            {players.map(p => (
+            {filteredPlayers.map(p => (
               <div key={p.id} className="p-3.5 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-sm">
                 <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${avatarBg(p.pseudo)} text-white flex items-center justify-center font-semibold text-xs`}>
                   {initials(p.pseudo)}
