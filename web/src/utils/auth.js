@@ -8,7 +8,11 @@ export const getAuthHeaders = () => {
 };
 
 export const authFetch = (url, opts = {}) => {
-  const headers = { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(opts.headers || {}) };
+  const hasBody = opts.body !== undefined;
+  const baseHeaders = hasBody ? { 'Content-Type': 'application/json' } : {};
+  const headers = { ...baseHeaders, ...getAuthHeaders(), ...(opts.headers || {}) };
+  // si pas de body, ne pas envoyer Content-Type vide qui casse fastify (FST_ERR_CTP_EMPTY_JSON_BODY)
+  if (!hasBody && headers['Content-Type'] === undefined) delete headers['Content-Type'];
   return fetch(`${API}${url}`, { ...opts, headers, credentials: 'include' });
 };
 

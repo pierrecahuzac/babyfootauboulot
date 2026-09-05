@@ -28,7 +28,7 @@ beforeEach(() => {
     if (url.includes('/api/players')) return Promise.resolve({ ok:true, json: async()=> mockPlayers });
     if (url.includes('/api/stats')) return Promise.resolve({ ok:true, json: async()=> mockStats });
     if (url.includes('/api/ligues')) return Promise.resolve({ ok:true, json: async()=> [] });
-    if (url.includes('/api/auth/me')) return Promise.resolve({ ok:false, status:401, json: async()=> ({ error:'non authentifié' }) });
+    if (url.includes('/api/auth/me')) return Promise.resolve({ ok:true, json: async()=> ({ id:1, email:'pierre@example.com', pseudo:'pierre_j', poste:'Attaque', niveau:'Confirmé', role:'user', emailVerified:true }) });
     return Promise.resolve({ ok:true, json: async()=> ({}) });
   });
 });
@@ -42,14 +42,29 @@ describe('App intégration', () => {
   });
 
   it('navigation vers inscription (register + invité)', async () => {
-    render(<App />);
-    await waitFor(()=> screen.getByText('pierre_j'));
-    // le header et le bloc amber ont tous deux "Créer compte", on prend le premier
-    const createBtns = screen.getAllByText(/Créer compte/);
-    fireEvent.click(createBtns[0]);
+    // part 1 : non connecté -> Créer compte depuis header
+    mockFetch.mockImplementation((url) => {
+      if (url.includes('/api/players')) return Promise.resolve({ ok:true, json: async()=> mockPlayers });
+      if (url.includes('/api/stats')) return Promise.resolve({ ok:true, json: async()=> mockStats });
+      if (url.includes('/api/ligues')) return Promise.resolve({ ok:true, json: async()=> [] });
+      if (url.includes('/api/auth/me')) return Promise.resolve({ ok:false, status:401, json: async()=> ({ error:'non authentifié' }) });
+      return Promise.resolve({ ok:true, json: async()=> ({}) });
+    });
+    const { unmount } = render(<App />);
+    await waitFor(()=> expect(screen.getByText(/Connecte-toi pour voir les joueurs/)).toBeInTheDocument());
+    fireEvent.click(screen.getByText(/Créer compte/));
     expect(await screen.findByText('Créer ton compte')).toBeInTheDocument();
-    // retour accueil puis invité
     fireEvent.click(screen.getByText(/Retour/));
+    unmount();
+    // part 2 : connecté -> invité visible
+    mockFetch.mockImplementation((url) => {
+      if (url.includes('/api/players')) return Promise.resolve({ ok:true, json: async()=> mockPlayers });
+      if (url.includes('/api/stats')) return Promise.resolve({ ok:true, json: async()=> mockStats });
+      if (url.includes('/api/ligues')) return Promise.resolve({ ok:true, json: async()=> [] });
+      if (url.includes('/api/auth/me')) return Promise.resolve({ ok:true, json: async()=> ({ id:1, email:'pierre@example.com', pseudo:'pierre_j', poste:'Attaque', niveau:'Confirmé', role:'user', emailVerified:true }) });
+      return Promise.resolve({ ok:true, json: async()=> ({}) });
+    });
+    render(<App />);
     await waitFor(()=> screen.getByText('pierre_j'));
     fireEvent.click(screen.getByText(/Ajouter un joueur invité/));
     expect(await screen.findByText('Ajouter un invité')).toBeInTheDocument();

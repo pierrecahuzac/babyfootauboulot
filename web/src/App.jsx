@@ -115,68 +115,79 @@ const App = () => {
     setView('accueil');
   };
 
+  const protectedViews = new Set(['match','stats','ligues','profil','admin','inscription']);
+  const safeSetView = (v) => {
+    if (protectedViews.has(v) && !user) { setView('login'); return; }
+    setView(v);
+  };
+
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-amber-100 via-lime-50 to-emerald-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900 ${theme==='dark' ? 'dark' : ''}`}>
-      <div className="max-w-md mx-auto min-h-screen bg-white dark:bg-zinc-900 shadow-2xl flex flex-col relative dark:text-zinc-100">
-        <header className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 dark:from-zinc-800 dark:via-zinc-800 dark:to-zinc-800 text-white p-5 flex justify-between items-center shadow-lg">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('accueil')}>
-            <span className="text-2xl">⚽</span>
+    <div className={`min-h-screen bg-zinc-50 dark:bg-zinc-950 ${theme==='dark' ? 'dark' : ''}`}>
+      <div className="max-w-md mx-auto min-h-screen bg-white dark:bg-zinc-900 flex flex-col relative dark:text-zinc-100 border-x border-zinc-200 dark:border-zinc-800">
+        <header className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-4 sm:px-5 py-4 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10">
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => safeSetView('accueil')}>
+            <span className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center text-sm">⚽</span>
             <div>
-              <h1 className="font-black text-xl tracking-tight leading-none">BABYFOOT</h1>
-              <p className="text-[11px] opacity-90 -mt-1 tracking-widest">AU BOULOT</p>
+              <h1 className="font-semibold text-[15px] tracking-tight leading-none">BABYFOOT</h1>
+              <p className="text-[10px] tracking-[0.14em] text-zinc-500 dark:text-zinc-400 font-medium -mt-0.5">AU BOULOT</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleTheme} className="w-8 h-8 rounded-full bg-white/20 dark:bg-zinc-700 backdrop-blur flex items-center justify-center text-sm" title={theme==='dark' ? 'Passer en clair' : 'Passer en sombre'}>{theme==='dark' ? '☀️' : '🌙'}</button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={toggleTheme} className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700" title={theme==='dark' ? 'Passer en clair' : 'Passer en sombre'}>{theme==='dark' ? '☀️' : '🌙'}</button>
             {user ? (
               <>
-                <span className="text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-full font-bold hidden sm:inline flex items-center gap-1">{user.pseudo} {user.role==='admin' && <span className="bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-full text-[10px]">ADMIN</span>}</span>
-                {user.role==='admin' && <button onClick={()=>setView('admin')} className="text-xs bg-amber-400 text-amber-950 px-3 py-1 rounded-full font-black">Admin</button>}
-                <button onClick={logout} className="text-xs bg-white text-emerald-700 dark:text-zinc-900 px-3 py-1 rounded-full font-bold shadow dark:bg-zinc-800">Sortir</button>
+                <button
+                  onClick={() => safeSetView(user.role === 'admin' ? 'admin' : 'profil')}
+                  title={user.role === 'admin' ? 'Aller à Admin' : 'Mon profil'}
+                  className={`text-xs px-2.5 py-1 rounded-full font-semibold border inline-flex items-center gap-1 ${user.role === 'admin' ? 'bg-red-500 text-white border-red-600 hover:bg-red-600' : 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600'}`}
+                >
+                  <span className="hidden sm:inline">{user.pseudo} · </span>{user.role === 'admin' ? 'admin' : 'user'}
+                </button>
+                <button onClick={logout} className="text-xs bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 px-3 py-1.5 rounded-full font-medium">Déconnexion</button>
               </>
             ) : (
               <>
-                <button onClick={() => setView('login')} className="text-xs bg-white/20 backdrop-blur px-3 py-1 rounded-full font-bold">Connexion</button>
-                <button onClick={() => setView('register')} className="text-xs bg-white text-emerald-700 dark:text-zinc-900 px-3 py-1 rounded-full font-bold shadow dark:bg-zinc-800">Créer compte</button>
+                <button onClick={() => setView('login')} className="text-xs border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 rounded-full font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800">Connexion</button>
+                <button onClick={() => setView('register')} className="text-xs bg-violet-600 text-white px-3 py-1.5 rounded-full font-medium hover:bg-violet-700">Créer compte</button>
               </>
             )}
           </div>
         </header>
 
-        {user && <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-2 text-xs text-emerald-800 flex justify-between"><span>👋 {user.pseudo} • {user.poste} • {user.niveau} {user.role==='admin' && '• 🛡️ admin'}</span><span className="hidden sm:inline">{user.email}</span></div>}
+        {user && <div className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 px-5 py-2 text-xs text-zinc-600 dark:text-zinc-400 flex justify-between"><span>{user.pseudo} · {user.poste} · {user.niveau}</span><span className="hidden sm:inline text-zinc-500">{user.email}</span></div>}
         {user && !(user.emailVerified ?? user.email_verified) && (
-          <div className="bg-amber-100 border-b border-amber-300 px-5 py-2 text-xs text-amber-900 flex justify-between items-center">
-            <span>⚠️ Email non vérifié — vérifie ta boîte</span>
-            <button onClick={()=>setView('verify')} className="bg-amber-500 text-white px-3 py-1 rounded-full font-bold">Vérifier</button>
+          <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 px-5 py-2.5 text-xs text-amber-800 dark:text-amber-300 flex justify-between items-center">
+            <span>Email non vérifié — vérifie ta boîte</span>
+            <button onClick={()=>setView('verify')} className="bg-amber-600 text-white px-3 py-1 rounded-full font-medium text-xs">Vérifier</button>
           </div>
         )}
         {user && (
-          <div className="px-5 py-2 bg-white dark:bg-zinc-800 border-b dark:border-zinc-700 flex items-center gap-2 text-xs">
-            <span className="font-black text-zinc-600 dark:text-zinc-300">🏆 Ligue</span>
-            <select value={currentLigue || ''} onChange={e=>selectLigue(e.target.value)} className="flex-1 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl px-2 py-1 bg-white dark:bg-zinc-900 font-bold dark:text-zinc-100">
+          <div className="px-4 sm:px-5 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2 text-xs">
+            <span className="font-semibold text-zinc-500 dark:text-zinc-400 tracking-wide text-[11px] uppercase">Ligue</span>
+            <select value={currentLigue || ''} onChange={e=>selectLigue(e.target.value)} className="flex-1 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-2 bg-white dark:bg-zinc-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
               <option value="">— choisir —</option>
               {ligues.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
-            <button onClick={()=>setView('ligues')} className="bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full font-bold">Gérer</button>
+            <button onClick={()=>setView('ligues')} className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 rounded-lg font-medium text-xs hover:bg-zinc-50">Gérer</button>
           </div>
         )}
 
-        <main className="p-5 flex-1 pb-20 bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-800">
-          {view === 'accueil' && <Accueil players={players} onNav={setView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>setView('ligues')} />}
-          {view === 'inscription' && <Inscription onDone={() => { refresh(); setView('accueil'); }} onBack={() => setView('accueil')} />}
-          {view === 'register' && <Register onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('login')} />}
-          {view === 'login' && <Login onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
+        <main className="p-4 sm:p-5 flex-1 pb-20 bg-white dark:bg-zinc-900">
+          {view === 'accueil' && <Accueil players={players} onNav={safeSetView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>safeSetView('ligues')} />}
+          {view === 'inscription' && (user ? <Inscription onDone={() => { refresh(); safeSetView('accueil'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour ajouter un invité</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('login')} />}
+          {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
           {view === 'forgot' && <Forgot onBack={()=>setView('login')} onReset={(t)=>{ if(t) setPendingResetToken(t); setView('reset'); }} />}
           {view === 'reset' && <Reset initialToken={pendingResetToken} onBack={()=>setView('login')} onDone={()=>{ setPendingResetToken(''); setView('login'); }} />}
-          {view === 'verify' && <VerifyEmail user={user} onBack={()=>setView('accueil')} onVerified={(data)=>{ setUser(data.user); setToken(data.token); setView('accueil'); loadMe(); }} />}
-          {view === 'profil' && <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} />}
-          {view === 'admin' && <Admin user={user} onBack={()=>setView('accueil')} />}
-          {view === 'ligues' && <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} />}
-          {view === 'match' && <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); setView('stats'); }} onBack={() => setView('accueil')} />}
-          {view === 'stats' && <Stats classement={stats} matches={matches} />}
+          {view === 'verify' && <VerifyEmail user={user} onBack={()=>safeSetView('accueil')} onVerified={(data)=>{ setUser(data.user); setToken(data.token); safeSetView('accueil'); loadMe(); }} />}
+          {view === 'profil' && (user ? <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir ton profil</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'ligues' && (user ? <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'match' && (user ? <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); safeSetView('stats'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'stats' && (user ? <Stats classement={stats} matches={matches} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les stats</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
         </main>
 
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur border-t border-zinc-200 dark:border-zinc-700 flex shadow-[0_-8px_24px_rgba(0,0,0,0.08)] rounded-t-2xl overflow-hidden">
+        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex">
           {[
             { id: 'accueil', label: 'Accueil', icon: '🏠' },
             { id: 'match', label: 'Match', icon: '⚔️' },
@@ -184,11 +195,11 @@ const App = () => {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setView(tab.id)}
-              className={`flex-1 py-3.5 text-sm flex flex-col items-center gap-0.5 transition-all ${view===tab.id ? 'bg-gradient-to-b from-emerald-500 to-teal-600 text-white font-bold shadow-inner' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+              onClick={() => safeSetView(tab.id)}
+              className={`flex-1 py-3 text-sm flex flex-col items-center gap-1 border-t-2 transition-colors ${view===tab.id ? 'border-violet-600 text-violet-600 bg-violet-50/60 dark:bg-violet-950/20 font-semibold' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700'}`}
             >
-              <span className="text-base leading-none">{tab.icon}</span>
-              <span className="text-[11px]">{tab.label}</span>
+              <span className="text-[15px] leading-none">{tab.icon}</span>
+              <span className="text-[11px] tracking-wide">{tab.label}</span>
             </button>
           ))}
         </nav>

@@ -118,7 +118,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
   });
 
   app.post('/api/auth/logout', async (req, reply) => {
-    reply.clearCookie('token', { path: '/' });
+    reply.clearCookie('token', { path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
     return { ok: true };
   });
 

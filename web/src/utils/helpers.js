@@ -1,13 +1,13 @@
 export const posteColor = (poste) => {
-  if (poste === 'Attaque') return 'bg-red-100 text-red-700 border-red-200';
-  if (poste === 'Défense') return 'bg-blue-100 text-blue-700 border-blue-200';
-  return 'bg-gradient-to-r from-blue-100 to-red-100 text-violet-700 border-violet-200';
+  if (poste === 'Attaque') return 'bg-violet-50 text-violet-700 border-violet-200';
+  if (poste === 'Défense') return 'bg-sky-50 text-sky-700 border-sky-200';
+  return 'bg-zinc-50 text-zinc-700 border-zinc-200';
 };
 
 export const niveauColor = (niveau) => {
-  if (niveau === 'Confirmé') return 'bg-amber-400 text-amber-900';
-  if (niveau === 'Intermédiaire') return 'bg-emerald-400 text-emerald-900';
-  return 'bg-zinc-200 text-zinc-700';
+  if (niveau === 'Confirmé') return 'bg-violet-600 text-white border-violet-600';
+  if (niveau === 'Intermédiaire') return 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900';
+  return 'bg-white text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600';
 };
 
 export const initials = (pseudo) => pseudo.slice(0,2).toUpperCase();

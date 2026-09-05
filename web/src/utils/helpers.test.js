@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { posteColor, niveauColor, initials, avatarBg, shuffle, randomTeams, validateMatchPayload } from './helpers.js';
 
 describe('helpers posteColor', () => {
-  it('Attaque rouge', () => expect(posteColor('Attaque')).toMatch(/red/));
-  it('Défense bleu', () => expect(posteColor('Défense')).toMatch(/blue/));
-  it('Les 2 violet', () => expect(posteColor('Les 2')).toMatch(/violet/));
+  it('Attaque violet', () => expect(posteColor('Attaque')).toMatch(/violet/));
+  it('Défense sky', () => expect(posteColor('Défense')).toMatch(/sky/));
+  it('Les 2 zinc', () => expect(posteColor('Les 2')).toMatch(/zinc/));
 });
 
 describe('niveauColor', () => {
-  it('Confirmé amber', () => expect(niveauColor('Confirmé')).toMatch(/amber/));
-  it('Intermédiaire emerald', () => expect(niveauColor('Intermédiaire')).toMatch(/emerald/));
+  it('Confirmé violet', () => expect(niveauColor('Confirmé')).toMatch(/violet/));
+  it('Intermédiaire sombre', () => expect(niveauColor('Intermédiaire')).toMatch(/zinc-900/));
   it('Débutant zinc', () => expect(niveauColor('Débutant')).toMatch(/zinc/));
 });
 
