@@ -12,8 +12,8 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
 
   const toTeam = (pseudo, poste) => {
     const p = players.find(x => x.pseudo === pseudo);
-    if (!p) return { pseudo, poste };
-    return { id: p.id, pseudo: p.pseudo, poste };
+    if (!p) return poste ? { pseudo, poste } : { pseudo };
+    return poste ? { id: p.id, pseudo: p.pseudo, poste } : { id: p.id, pseudo: p.pseudo };
   };
 
   const shuffle = (arr) => {
@@ -47,8 +47,8 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
   const submit = async (e) => {
     e.preventDefault();
     setErr('');
-    const team_bleue = format === '1v1' ? [toTeam(bleue1, 'Les 2')] : [toTeam(bleue1, 'Attaque'), toTeam(bleue2, 'Défense')];
-    const team_rouge = format === '1v1' ? [toTeam(rouge1, 'Les 2')] : [toTeam(rouge1, 'Attaque'), toTeam(rouge2, 'Défense')];
+    const team_bleue = format === '1v1' ? [toTeam(bleue1)] : [toTeam(bleue1, 'Attaque'), toTeam(bleue2, 'Défense')];
+    const team_rouge = format === '1v1' ? [toTeam(rouge1)] : [toTeam(rouge1, 'Attaque'), toTeam(rouge2, 'Défense')];
     if (team_bleue.some(t=>!t.pseudo) || team_rouge.some(t=>!t.pseudo)) { setErr('Sélectionne tous les joueurs'); return; }
     const allPseudos = [...team_bleue, ...team_rouge].map(t=>t.pseudo);
     if (new Set(allPseudos).size !== allPseudos.length) { setErr('Un joueur ne peut pas être dans les deux équipes'); return; }

@@ -227,7 +227,7 @@ async function main() {
   for (const lig of ligues) {
     const { rows: members } = await pool.query(`SELECT u.id, u.pseudo, u.poste FROM users u JOIN ligue_members m ON m.user_id=u.id WHERE m.ligue_id=$1`, [lig.id]);
     if (members.length < 2) continue;
-    const matchCount = isDemo ? 14 : 24; // démo: 14×3=42 matchs, complet: 24×5=120
+    const matchCount = isDemo ? 14 : 24; // démo: 14×5=70 matchs, complet: 24×5=120
     for (let k = 0; k < matchCount; k++) {
       const format = Math.random() > 0.35 ? '2v2' : '1v1';
       const need = format === '1v1' ? 2 : 4;
@@ -235,8 +235,8 @@ async function main() {
       const picked = shuffle(members).slice(0, need);
       let team_bleue, team_rouge;
       if (format === '1v1') {
-        team_bleue = [{ id: picked[0].id, pseudo: picked[0].pseudo, poste: 'Les 2' }];
-        team_rouge = [{ id: picked[1].id, pseudo: picked[1].pseudo, poste: 'Les 2' }];
+        team_bleue = [{ id: picked[0].id, pseudo: picked[0].pseudo }];
+        team_rouge = [{ id: picked[1].id, pseudo: picked[1].pseudo }];
       } else {
         team_bleue = [{ id: picked[0].id, pseudo: picked[0].pseudo, poste: 'Attaque' }, { id: picked[1].id, pseudo: picked[1].pseudo, poste: 'Défense' }];
         team_rouge = [{ id: picked[2].id, pseudo: picked[2].pseudo, poste: 'Attaque' }, { id: picked[3].id, pseudo: picked[3].pseudo, poste: 'Défense' }];

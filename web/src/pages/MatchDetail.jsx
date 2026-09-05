@@ -33,7 +33,7 @@ const MatchDetail = ({ match, onBack, ligue }) => {
             <p className="text-xs font-semibold tracking-wide uppercase text-sky-700">Bleue</p>
             <div className="mt-2 space-y-1">
               {bleue.map((p, i) => (
-                <p key={i} className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{p.pseudo} <span className="text-xs text-zinc-500">· {p.poste}</span></p>
+                <p key={i} className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{p.pseudo}{match.format !== '1v1' && p.poste ? <span className="text-xs text-zinc-500"> · {p.poste}</span> : null}</p>
               ))}
             </div>
             <p className="mt-3 text-2xl font-bold text-sky-700">{sBleue}</p>
@@ -45,7 +45,7 @@ const MatchDetail = ({ match, onBack, ligue }) => {
             <p className="text-xs font-semibold tracking-wide uppercase text-rose-700">Rouge</p>
             <div className="mt-2 space-y-1">
               {rouge.map((p, i) => (
-                <p key={i} className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{p.pseudo} <span className="text-xs text-zinc-500">· {p.poste}</span></p>
+                <p key={i} className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{p.pseudo}{match.format !== '1v1' && p.poste ? <span className="text-xs text-zinc-500"> · {p.poste}</span> : null}</p>
               ))}
             </div>
             <p className="mt-3 text-2xl font-bold text-rose-700">{sRouge}</p>

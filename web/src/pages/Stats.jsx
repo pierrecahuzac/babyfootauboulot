@@ -35,7 +35,10 @@ const Stats = ({ classement, matches, onSelect }) => {
             const winBleue = Number(sBleue) > Number(sRouge);
             const winRouge = Number(sRouge) > Number(sBleue);
             const borderCls = winBleue ? 'border-sky-300 dark:border-sky-800' : winRouge ? 'border-rose-300 dark:border-rose-800' : 'border-zinc-200 dark:border-zinc-700';
-            const fmt = (t) => `${t.pseudo}${t.poste ? ` ${t.poste==='Attaque'?'· Att':'Att'===t.poste?'· Att':t.poste==='Défense'?'· Déf':'·'}` : ''}`;
+            const fmt = (t) => {
+              if (m.format === '1v1' || !t.poste) return t.pseudo;
+              return `${t.pseudo}${t.poste ? ` ${t.poste==='Attaque'?'· Att':'Att'===t.poste?'· Att':t.poste==='Défense'?'· Déf':'·'}` : ''}`;
+            };
             const d = m.created_at ?? m.createdAt ?? m.created_at;
             const dateStr = d ? new Date(d).toLocaleDateString('fr-FR', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
             const formatLabel = m.format === '1v1' ? 'Solo' : m.format === '2v2' ? 'Duo' : (m.format || '');
