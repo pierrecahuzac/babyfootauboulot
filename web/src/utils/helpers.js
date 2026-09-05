@@ -9,6 +9,7 @@ export const posteColor = (poste) => {
 export const niveauColor = (niveau) => {
   if (niveau === 'Confirmé') return 'bg-violet-600 text-white border-violet-600';
   if (niveau === 'Intermédiaire') return 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900';
+  if (niveau === 'Débutant') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   return 'bg-white text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-600';
 };
 

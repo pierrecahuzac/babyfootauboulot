@@ -102,7 +102,7 @@ const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
                     ) : (
                       <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${posteColor(p.poste)}`}>{p.poste}</span>
                     )}
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${niveauColor(p.niveau)}`}>{p.niveau}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${niveauColor(p.niveau)}`}>{p.niveau}</span>
                   </div>
                 </div>
                 <span className="text-zinc-300 dark:text-zinc-600">›</span>
