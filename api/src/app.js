@@ -123,7 +123,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     }
   };
 
-  const corsOriginsForCsp = (process.env.CORS_ORIGIN || 'https://app.babyfoot.vercel.app,https://babyfoot.vercel.app').split(',').map(s=>s.trim()).filter(Boolean);
+  const corsOriginsForCsp = (process.env.CORS_ORIGIN || 'https://babyfootauboulot.vercel.app,https://babyfootauboulot-landing.vercel.app').split(',').map(s=>s.trim()).filter(Boolean);
   app.register(helmet, {
     contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
       directives: {
@@ -138,7 +138,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
   });
   app.register(cookie);
-  const corsOrigins = (process.env.CORS_ORIGIN || 'https://app.babyfoot.vercel.app,https://babyfoot.vercel.app,http://localhost:55174,http://localhost:55175').split(',').map(s=>s.trim()).filter(Boolean);
+  const corsOrigins = (process.env.CORS_ORIGIN || 'https://babyfootauboulot.vercel.app,https://babyfootauboulot-landing.vercel.app,http://localhost:55174,http://localhost:55175').split(',').map(s=>s.trim()).filter(Boolean);
   app.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
