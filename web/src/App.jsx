@@ -11,6 +11,8 @@ import Profil from './pages/Profil.jsx';
 import Inscription from './pages/Inscription.jsx';
 import CreateMatch from './pages/CreateMatch.jsx';
 import Stats from './pages/Stats.jsx';
+import MatchDetail from './pages/MatchDetail.jsx';
+import Roadmap from './pages/Roadmap.jsx';
 import Admin from './pages/Admin.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
@@ -38,6 +40,7 @@ const App = () => {
   }, [theme]);
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
   const [pendingResetToken, setPendingResetToken] = useState('');
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
   // nettoie les tokens dans l'URL (anti Referer/history leak R7)
   useEffect(() => {
@@ -115,11 +118,12 @@ const App = () => {
     setView('accueil');
   };
 
-  const protectedViews = new Set(['match','stats','ligues','profil','admin','inscription']);
+  const protectedViews = new Set(['match','stats','ligues','profil','admin','inscription','matchDetail']);
   const safeSetView = (v) => {
     if (protectedViews.has(v) && !user) { setView('login'); return; }
     setView(v);
   };
+  const openMatch = (m) => { setSelectedMatch(m); safeSetView('matchDetail'); };
 
   return (
     <div className={`min-h-screen bg-zinc-50 dark:bg-zinc-950 ${theme==='dark' ? 'dark' : ''}`}>
@@ -138,10 +142,10 @@ const App = () => {
               <>
                 <button
                   onClick={() => safeSetView(user.role === 'admin' ? 'admin' : 'profil')}
-                  title={user.role === 'admin' ? 'Aller à Admin' : 'Mon profil'}
+                  title={user.role === 'admin' ? 'Admin' : 'Profil'}
                   className={`text-xs px-2.5 py-1 rounded-full font-semibold border inline-flex items-center gap-1 ${user.role === 'admin' ? 'bg-red-500 text-white border-red-600 hover:bg-red-600' : 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600'}`}
                 >
-                  <span className="hidden sm:inline">{user.pseudo} · </span>{user.role === 'admin' ? 'admin' : 'user'}
+                  {user.pseudo}
                 </button>
                 <button onClick={logout} className="text-xs bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 px-3 py-1.5 rounded-full font-medium">Déconnexion</button>
               </>
@@ -173,7 +177,7 @@ const App = () => {
         )}
 
         <main className="p-4 sm:p-5 flex-1 pb-20 bg-white dark:bg-zinc-900">
-          {view === 'accueil' && <Accueil players={players} onNav={safeSetView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>safeSetView('ligues')} />}
+          {view === 'accueil' && <Accueil players={players} onNav={safeSetView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>safeSetView('ligues')} onRoadmap={()=>setView('roadmap')} />}
           {view === 'inscription' && (user ? <Inscription onDone={() => { refresh(); safeSetView('accueil'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour ajouter un invité</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('login')} />}
           {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
@@ -184,7 +188,9 @@ const App = () => {
           {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'ligues' && (user ? <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'match' && (user ? <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); safeSetView('stats'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'stats' && (user ? <Stats classement={stats} matches={matches} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les stats</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'stats' && (user ? <Stats classement={stats} matches={matches} onSelect={openMatch} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les stats</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} ligue={ligues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId))} onBack={()=>safeSetView('stats')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'roadmap' && <Roadmap />}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex">
@@ -192,6 +198,7 @@ const App = () => {
             { id: 'accueil', label: 'Accueil', icon: '🏠' },
             { id: 'match', label: 'Match', icon: '⚔️' },
             { id: 'stats', label: 'Stats', icon: '🏆' },
+            { id: 'roadmap', label: 'Todo', icon: '📋' },
           ].map(tab => (
             <button
               key={tab.id}

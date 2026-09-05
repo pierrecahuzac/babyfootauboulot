@@ -1,0 +1,69 @@
+[
+  {
+    "done": true,
+    "label": "Auth email + ligues privées",
+    "version": "0.01",
+    "type": "feature"
+  },
+  {
+    "done": true,
+    "label": "Matchs 1v1 / 2v2 avec poste Attaque/Défense",
+    "version": "0.02",
+    "type": "feature"
+  },
+  {
+    "done": true,
+    "label": "Tirage aléatoire équipes",
+    "version": "0.03",
+    "type": "feature"
+  },
+  {
+    "done": true,
+    "label": "Stats classement + historique avec date",
+    "version": "0.04",
+    "type": "feature"
+  },
+  {
+    "done": true,
+    "label": "UI clair épuré + accès protégé + fix déconnexion",
+    "version": "0.05",
+    "type": "revision"
+  },
+  {
+    "done": true,
+    "label": "Match détail + bordure vainqueur",
+    "version": "0.06",
+    "type": "revision"
+  },
+  {
+    "done": false,
+    "label": "Système de tournoi — Solo, Duo, équipe choisie, équipe aléatoire",
+    "version": "0.07",
+    "type": "feature",
+    "badge": "TODO"
+  },
+  {
+    "done": false,
+    "label": "Stats par poste (meilleur attaquant/défenseur)",
+    "version": "0.08",
+    "type": "feature"
+  },
+  {
+    "done": false,
+    "label": "Duos qui gagnent le plus",
+    "version": "0.09",
+    "type": "feature"
+  },
+  {
+    "done": false,
+    "label": "Filtrage stats par période (semaine/mois)",
+    "version": "0.10",
+    "type": "feature"
+  },
+  {
+    "done": false,
+    "label": "Gestion ligue : renommer, régénérer code, kicker, quitter",
+    "version": "0.11",
+    "type": "feature"
+  }
+]

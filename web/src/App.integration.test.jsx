@@ -37,7 +37,7 @@ describe('App intégration', () => {
   it('affiche header et joueurs', async () => {
     render(<App />);
     expect(screen.getByText('BABYFOOT')).toBeInTheDocument();
-    await waitFor(()=> expect(screen.getByText('pierre_j')).toBeInTheDocument());
+    await waitFor(()=> expect(screen.getAllByText('pierre_j').length).toBeGreaterThan(0));
     expect(screen.getByText('sarah_l')).toBeInTheDocument();
   });
 
@@ -65,14 +65,14 @@ describe('App intégration', () => {
       return Promise.resolve({ ok:true, json: async()=> ({}) });
     });
     render(<App />);
-    await waitFor(()=> screen.getByText('pierre_j'));
+    await waitFor(()=> expect(screen.getAllByText('pierre_j').length).toBeGreaterThan(0));
     fireEvent.click(screen.getByText(/Ajouter un joueur invité/));
     expect(await screen.findByText('Ajouter un invité')).toBeInTheDocument();
   });
 
   it('CreateMatch affiche équipes Bleue/Rouge et bouton random', async () => {
     render(<App />);
-    await waitFor(()=> screen.getByText('pierre_j'));
+    await waitFor(()=> expect(screen.getAllByText('pierre_j').length).toBeGreaterThan(0));
     // click hero Créer un match
     fireEvent.click(screen.getByText(/Créer un match/));
     expect(await screen.findByText('Nouveau match')).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe('App intégration', () => {
 
   it('Stats affiche classement et matchs', async () => {
     render(<App />);
-    await waitFor(()=> screen.getByText('pierre_j'));
+    await waitFor(()=> expect(screen.getAllByText('pierre_j').length).toBeGreaterThan(0));
     // bottom nav Stats - le dernier bouton Stats (nav)
     const statsBtn = screen.getAllByText('Stats').pop();
     fireEvent.click(statsBtn);

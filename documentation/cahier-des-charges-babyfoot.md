@@ -41,14 +41,19 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - `GET /api/stats` → `calculateClassement(players,matches)` (`api/src/utils/stats.js`) : `victoires/défaites/ratio`, tri `victoires puis ratio`, `normalizeMatch` gère legacy `teamA/team_a`
 - Front `Stats` : podium `🥇🥈🥉` + `Derniers matchs` `Bleue ⚡/🛡️ vs Rouge` + score, filtré par ligue si sélectionnée
 
-### 3.6 Pistes bonus (à discuter / partiellement fait)
-- [x] Randomisation (fait)
-- [x] Poste joué tracé par match (fait, base pour stats par poste)
-- [ ] Stats par poste (meilleur attaquant/défenseur) — données prêtes, calcul à ajouter
-- [ ] Historique duos qui gagnent le plus
-- [ ] Notifications “un babyfoot se monte”
-- [ ] Filtrage stats par période (semaine/mois)
-- [ ] Gestion ligue : renommer, régénérer code, kicker membre, quitter/supprimer ligue
+### 3.6 Roadmap versionnée (source `ROADMAP.md` + `roadmap.json` temps réel)
+- [x] `0.01` Auth email + ligues privées
+- [x] `0.02` Matchs 1v1/2v2 poste
+- [x] `0.03` Tirage aléatoire
+- [x] `0.04` Stats classement + historique date (`ven. 05 sept.`)
+- [x] `0.05` UI clair épuré + accès protégé + fix déconnexion
+- [x] `0.06` Match détail + bordure vainqueur
+- [ ] `0.07` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
+- [ ] `0.08` Stats par poste
+- [ ] `0.09` Duos gagnants
+- [ ] `0.10` Filtrage stats période
+- [ ] `0.11` Gestion ligue (renommer/code/kicker/quitter)
+> `web/src/pages/Roadmap.jsx` lit `roadmap.json` généré depuis `ROADMAP.md` — synchro temps réel app ↔ docs
 
 ## 4. Modèle de données (réel)
 

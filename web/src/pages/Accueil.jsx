@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { posteColor, niveauColor, initials, avatarBg } from '../utils/helpers.js';
 
-const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
+const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
   const [showCode, setShowCode] = useState(false);
   return (
     <div className="space-y-4">
@@ -63,6 +63,8 @@ const Accueil = ({ players, onNav, user, ligue, onLigues }) => {
       )}
 
       {user && <button onClick={() => onNav('inscription')} className="w-full border border-dashed border-zinc-300 dark:border-zinc-600 py-2.5 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">+ Ajouter un joueur invité (sans compte)</button>}
+
+      <button onClick={() => (onRoadmap ? onRoadmap() : onNav('roadmap'))} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">📋 Voir la roadmap</button>
 
       {!user ? (
         <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50">
