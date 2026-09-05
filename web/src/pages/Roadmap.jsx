@@ -12,6 +12,12 @@ const Roadmap = () => {
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Publique — visible par tous, sans connexion.</p>
       </div>
 
+      <div className="flex justify-center gap-2 text-[11px]">
+        <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600">feature</span>
+        <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">revision</span>
+        <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">bugfix</span>
+      </div>
+
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-700">
         {todos.map((t, i) => (
           <div key={i} className="p-3.5 flex items-center gap-3">
@@ -23,11 +29,6 @@ const Roadmap = () => {
         ))}
       </div>
 
-      <div className="flex justify-center gap-2 text-[11px]">
-        <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600">feature</span>
-        <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">revision</span>
-        <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">bugfix</span>
-      </div>
       <p className="text-xs text-zinc-500 text-center">Tournoi à venir : Solo/Duo, équipes choisies ou aléatoires, arbre à élimination.</p>
     </div>
   );
