@@ -62,6 +62,7 @@ const Stats = ({ classement, matches, onSelect }) => {
           {matches.length===0 && <p className="text-xs text-zinc-400 text-center py-4">Aucun match joué</p>}
         </div>
       </div>
+      <div className="h-10" />
     </div>
   );
 };
