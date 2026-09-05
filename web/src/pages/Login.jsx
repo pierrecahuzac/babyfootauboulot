@@ -10,7 +10,7 @@ const Login = ({ onAuth, onBack, onSwitch, onForgot }) => {
   const submit = async (e) => {
     e.preventDefault();
     setErr('');
-    const res = await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ email, password }) });
+    const res = await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'Content-Type':'application/json' }, credentials: 'include', body: JSON.stringify({ email, password }) });
     const body = await res.json();
     if (!res.ok) { setErr(body.error + (res.status===429 ? ' ⏳' : '')); return; }
     if (body.emailVerified === false) {

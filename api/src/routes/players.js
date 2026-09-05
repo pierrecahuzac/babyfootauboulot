@@ -8,7 +8,7 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
   const membersTable = ligueMembers;
 
   const isMember = async (ligueId, userId) => {
-    if (!liguesTable || !membersTable) return true;
+    if (!liguesTable || !membersTable) return false;
     try {
       const rows = await db.select().from(membersTable);
       return rows.some(r => Number(r.ligueId ?? r.ligue_id) === Number(ligueId) && Number(r.userId ?? r.user_id) === Number(userId));
@@ -54,6 +54,8 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
   app.post('/api/players', async (req, reply) => {
     const { pseudo, poste, niveau } = req.body;
     if (!pseudo || !poste || !niveau) return reply.code(400).send({ error: 'pseudo, poste, niveau requis' });
+    if (pseudo.trim().length < 2 || pseudo.trim().length > 24) return reply.code(400).send({ error: 'pseudo 2-24 caractères' });
+    if (!/^[a-zA-Z0-9._-]+$/.test(pseudo.trim())) return reply.code(400).send({ error: 'pseudo: caractères autorisés a-z 0-9 . _ -' });
     if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
     try {
       const [row] = await db.insert(players).values({ pseudo: pseudo.trim(), poste, niveau }).returning();
@@ -64,7 +66,7 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
     }
   });
 
-  app.patch('/api/players/:id', async (req, reply) => {
+  app.patch('/api/players/:id', { preHandler: requireAuth }, async (req, reply) => {
     const { poste, niveau } = req.body;
     const data = {};
     if (poste) data.poste = poste;

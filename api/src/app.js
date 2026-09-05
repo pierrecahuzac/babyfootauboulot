@@ -112,7 +112,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
         const owner = await pool.query(`SELECT id FROM users LIMIT 1`).then(r=>r.rows[0]).catch(()=>null);
         const ownerId = owner?.id || null;
         const invite = genInvite();
-        const slug = `boulot-${Math.random().toString(36).slice(2,4)}`;
+        const slug = genSlug('boulot');
         const { rows } = await pool.query(`INSERT INTO ligues (name, slug, description, owner_id, invite_code) VALUES ($1,$2,$3,$4,$5) RETURNING id`, ['Boulot', slug, 'Ligue par défaut', ownerId, invite]);
         const ligueId = rows[0]?.id;
         if (ligueId) {
@@ -124,19 +124,33 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
   };
 
   app.register(helmet, {
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://babyfootauboulot.dev", "https://app.babyfootauboulot.dev"],
+      },
+    } : false,
     crossOriginEmbedderPolicy: false,
+    hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
   });
   app.register(cookie);
   const corsOrigins = (process.env.CORS_ORIGIN || 'https://babyfootauboulot.dev,https://app.babyfootauboulot.dev,http://localhost:55174,http://localhost:55175').split(',').map(s=>s.trim()).filter(Boolean);
   app.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      if (corsOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:'))) return cb(null, true);
+      if (corsOrigins.includes(origin)) return cb(null, true);
+      // dev: autorise réseau local (vite 0.0.0.0) — localhost + LAN 192.168/10./172.16.
+      if (process.env.NODE_ENV !== 'production') {
+        if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || /^http:\/\/192\.168\.\d+\.\d+:\d+/.test(origin) || /^http:\/\/10\.\d+\.\d+\.\d+:\d+/.test(origin) || /^http:\/\/172\.1[6-9]\.\d+\.\d+\.\d+:\d+/.test(origin) || /^http:\/\/172\.2\d\.\d+\.\d+\.\d+:\d+/.test(origin) || /^http:\/\/172\.3[0-1]\.\d+\.\d+\.\d+:\d+/.test(origin)) return cb(null, true);
+      }
       return cb(new Error('CORS bloqué'), false);
     },
     credentials: true,
     methods: ['GET','POST','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization','X-Ligue-Id','X-Requested-With'],
   });
 
   await authRoutes(app, { db, pool, users, players });

@@ -7,7 +7,7 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
   const membersTable = ligueMembers;
 
   const isMember = async (ligueId, userId) => {
-    if (!liguesTable || !membersTable) return true;
+    if (!liguesTable || !membersTable) return false;
     try {
       const rows = await db.select().from(membersTable);
       return rows.some(r => Number(r.ligueId ?? r.ligue_id) === Number(ligueId) && Number(r.userId ?? r.user_id) === Number(userId));

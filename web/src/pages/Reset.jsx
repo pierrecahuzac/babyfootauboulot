@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-const Reset = ({ onBack, onDone }) => {
-  const [token, setToken] = useState(() => new URLSearchParams(window.location.search).get('reset') || '');
+const Reset = ({ onBack, onDone, initialToken }) => {
+  const [token, setToken] = useState(() => initialToken || new URLSearchParams(window.location.search).get('reset') || '');
+  useEffect(() => {
+    if (initialToken) setToken(initialToken);
+  }, [initialToken]);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.has('reset') || p.has('token')) window.history.replaceState({}, '', window.location.pathname);
+  }, []);
   const [pwd, setPwd] = useState('');
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const submit = async (e) => {
     e.preventDefault();
     setErr(''); setOk('');
-    const r = await fetch(`${API}/api/auth/reset`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, newPassword: pwd }) });
+    const r = await fetch(`${API}/api/auth/reset`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ token, newPassword: pwd }) });
     const b = await r.json();
     if (!r.ok) { setErr(b.error); return; }
     setOk('Mot de passe réinitialisé — connecte-toi');

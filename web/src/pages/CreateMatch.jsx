@@ -54,7 +54,7 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
     if (new Set(allPseudos).size !== allPseudos.length) { setErr('Un joueur ne peut pas être dans les deux équipes'); return; }
     if (!ligueId) { setErr('Choisis une ligue d’abord (en haut)'); return; }
     const res = await fetch(`${API}/api/matches`, {
-      method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(ligueId) },
+      method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(ligueId) }, credentials: 'include',
       body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: ligueId })
     });
     if (!res.ok) { setErr((await res.json()).error); return; }

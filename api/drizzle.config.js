@@ -7,6 +7,9 @@
 if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DRIZZLE_STUDIO) {
   console.error('⛔ Drizzle Studio INTERDIT en prod — ENABLE_DRIZZLE_STUDIO doit rester vide en prod');
 }
+if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL manquant en prod — renseigne .env');
+}
 export default {
   schema: './src/db/schema.js',
   out: './drizzle',

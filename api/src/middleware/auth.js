@@ -45,11 +45,16 @@ export const createAuthMiddleware = () => {
 
 // rate-limit login: 5 tentatives / 15 min par ip+email
 const loginAttempts = new Map();
+const genericAttempts = new Map();
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 export const getRateKey = (req, emailNorm) => {
   const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
   return `login:${ip}:${emailNorm.toLowerCase()}`;
+};
+export const getIpKey = (req, prefix) => {
+  const ip = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  return `${prefix}:${ip}`;
 };
 export const isRateLimited = (key) => {
   const entry = loginAttempts.get(key);
@@ -66,6 +71,24 @@ export const recordLoginAttempt = (key, success) => {
   const entry = loginAttempts.get(key);
   if (!entry || now - entry.firstAt > RATE_LIMIT_WINDOW_MS) {
     loginAttempts.set(key, { count: 1, firstAt: now });
+  } else {
+    entry.count += 1;
+  }
+};
+export const isGenericRateLimited = (key) => {
+  const entry = genericAttempts.get(key);
+  if (!entry) return false;
+  if (Date.now() - entry.firstAt > RATE_LIMIT_WINDOW_MS) {
+    genericAttempts.delete(key);
+    return false;
+  }
+  return entry.count >= RATE_LIMIT_MAX;
+};
+export const recordGenericAttempt = (key) => {
+  const now = Date.now();
+  const entry = genericAttempts.get(key);
+  if (!entry || now - entry.firstAt > RATE_LIMIT_WINDOW_MS) {
+    genericAttempts.set(key, { count: 1, firstAt: now });
   } else {
     entry.count += 1;
   }

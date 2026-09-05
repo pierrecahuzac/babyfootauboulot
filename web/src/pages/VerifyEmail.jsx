@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_URL || '';
 
 const VerifyEmail = ({ user, onBack, onVerified }) => {
   const [token, setToken] = useState(() => new URLSearchParams(window.location.search).get('verify') || '');
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.has('verify') || p.has('token')) window.history.replaceState({}, '', window.location.pathname);
+  }, []);
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const [email, setEmail] = useState(user?.email || '');
   const submit = async (e) => {
     e.preventDefault();
     setErr(''); setOk('');
-    const r = await fetch(`${API}/api/auth/verify-email`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
+    const r = await fetch(`${API}/api/auth/verify-email`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ token }) });
     const b = await r.json();
     if (!r.ok) { setErr(b.error); return; }
     setOk('Email vérifié !');
@@ -18,7 +22,7 @@ const VerifyEmail = ({ user, onBack, onVerified }) => {
   };
   const resend = async () => {
     setErr(''); setOk('');
-    const r = await fetch(`${API}/api/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: email || user?.email }) });
+    const r = await fetch(`${API}/api/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ email: email || user?.email }) });
     const b = await r.json();
     if (!r.ok) { setErr(b.error); return; }
     setOk(b.verificationToken ? `Nouveau token (dev): ${b.verificationToken.slice(0,12)}…` : b.message);

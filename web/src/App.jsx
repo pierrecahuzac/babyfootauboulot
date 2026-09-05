@@ -37,13 +37,21 @@ const App = () => {
     localStorage.setItem('babyfoot_theme', theme);
   }, [theme]);
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  const [pendingResetToken, setPendingResetToken] = useState('');
+
+  // nettoie les tokens dans l'URL (anti Referer/history leak R7)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.has('verify') || p.has('reset') || p.has('token')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const refresh = async (ligueId = currentLigue) => {
     const q = ligueId ? `?ligue_id=${ligueId}` : '';
-    const headers = getToken() ? { Authorization: `Bearer ${getToken()}` } : {};
     const [p, s] = await Promise.all([
-      fetch(`${API}/api/players${q}`, { headers }).then(r => r.json()).catch(()=>[]),
-      fetch(`${API}/api/stats${q}`, { headers }).then(r => r.json()).catch(()=>({ classement: [], matches: [] })),
+      authFetch(`/api/players${q}`).then(r => r.json()).catch(()=>[]),
+      authFetch(`/api/stats${q}`).then(r => r.json()).catch(()=>({ classement: [], matches: [] })),
     ]);
     setPlayers(Array.isArray(p) ? p : []);
     setStats(s.classement ?? []);
@@ -51,8 +59,6 @@ const App = () => {
   };
 
   const loadMe = async () => {
-    const t = getToken();
-    if (!t) { setUser(null); return; }
     try {
       const r = await authFetch('/api/auth/me');
       if (!r.ok) { setToken(null); setUser(null); return; }
@@ -160,8 +166,8 @@ const App = () => {
           {view === 'inscription' && <Inscription onDone={() => { refresh(); setView('accueil'); }} onBack={() => setView('accueil')} />}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('login')} />}
           {view === 'login' && <Login onAuth={onAuth} onBack={() => setView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
-          {view === 'forgot' && <Forgot onBack={()=>setView('login')} onReset={(t)=>{ setView('reset'); if(t) window.history.pushState({},'','?reset='+t); }} />}
-          {view === 'reset' && <Reset onBack={()=>setView('login')} onDone={()=>setView('login')} />}
+          {view === 'forgot' && <Forgot onBack={()=>setView('login')} onReset={(t)=>{ if(t) setPendingResetToken(t); setView('reset'); }} />}
+          {view === 'reset' && <Reset initialToken={pendingResetToken} onBack={()=>setView('login')} onDone={()=>{ setPendingResetToken(''); setView('login'); }} />}
           {view === 'verify' && <VerifyEmail user={user} onBack={()=>setView('accueil')} onVerified={(data)=>{ setUser(data.user); setToken(data.token); setView('accueil'); loadMe(); }} />}
           {view === 'profil' && <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} />}
           {view === 'admin' && <Admin user={user} onBack={()=>setView('accueil')} />}

@@ -6,3 +6,7 @@ drizzle
 .test
 .git
 .gitignore
+.env
+.env.*
+*.log
+captures

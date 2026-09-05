@@ -44,6 +44,10 @@ export const validateMatchPayload = ({ format, team_bleue, team_rouge, score_ble
   if (format === '2v2' && (team_bleue.length !== 2 || team_rouge.length !== 2)) {
     return '2v2 = 2 joueurs par équipe';
   }
+  const sb = Number(score_bleue), sr = Number(score_rouge);
+  if (!Number.isInteger(sb) || !Number.isInteger(sr) || sb < 0 || sb > 10 || sr < 0 || sr > 10) {
+    return 'scores 0-10 entiers requis';
+  }
   const all = [...team_bleue, ...team_rouge].map(t => t.pseudo);
   if (new Set(all).size !== all.length) return 'Un joueur ne peut pas être dans les deux équipes';
   return null;

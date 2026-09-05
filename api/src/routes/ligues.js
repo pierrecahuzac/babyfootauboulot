@@ -9,7 +9,7 @@ export default async function liguesRoutes(app, { db, pool, players, matches, us
   const { requireAuth } = createAuthMiddleware();
 
   const isMember = async (ligueId, userId) => {
-    if (!liguesTable || !membersTable) return true;
+    if (!liguesTable || !membersTable) return false;
     try {
       const rows = await db.select().from(membersTable);
       return rows.some(r => Number(r.ligueId ?? r.ligue_id) === Number(ligueId) && Number(r.userId ?? r.user_id) === Number(userId));
@@ -19,6 +19,7 @@ export default async function liguesRoutes(app, { db, pool, players, matches, us
   app.post('/api/ligues', { preHandler: requireAuth }, async (req, reply) => {
     const { name, description } = req.body;
     if (!name) return reply.code(400).send({ error: 'name requis' });
+    if (name.trim().length < 2 || name.trim().length > 40) return reply.code(400).send({ error: 'nom 2-40 caractères' });
     if (isBlocked(name.trim())) return reply.code(400).send({ error: blockedReason(name.trim()) });
     const slug = genSlug(name);
     const invite = genInvite();

@@ -10,7 +10,7 @@ const Forgot = ({ onBack, onReset }) => {
   const submit = async (e) => {
     e.preventDefault();
     setErr(''); setOk(''); setToken('');
-    const r = await fetch(`${API}/api/auth/forgot`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+    const r = await fetch(`${API}/api/auth/forgot`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ email }) });
     const b = await r.json();
     if (!r.ok) { setErr(b.error); return; }
     if (b.resetToken) {

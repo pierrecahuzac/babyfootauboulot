@@ -1,19 +1,25 @@
 import { eq } from 'drizzle-orm';
-import { hashPassword, verifyPassword, signToken, authFromRequest, hashToken } from '../utils/auth.js';
+import { hashPassword, verifyPassword, signToken, authFromRequest, hashToken, verifyToken } from '../utils/auth.js';
 import { isValidEmail, genVerificationToken, genResetToken } from '../utils/helpers.js';
 import { isBlocked, blockedReason } from '../utils/moderation.js';
-import { createAuthMiddleware, getRateKey, isRateLimited, recordLoginAttempt } from '../middleware/auth.js';
+import { createAuthMiddleware, getRateKey, isRateLimited, recordLoginAttempt, getIpKey, isGenericRateLimited, recordGenericAttempt } from '../middleware/auth.js';
 
 export default async function authRoutes(app, { db, pool, users, players }) {
   const getUsersTable = () => users || players;
   const { requireAuth } = createAuthMiddleware();
+  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 };
 
   app.post('/api/auth/register', async (req, reply) => {
+    const rateKeyReg = getIpKey(req, 'register');
+    if (isGenericRateLimited(rateKeyReg)) return reply.code(429).send({ error: 'trop de créations, réessaie dans 15 minutes' });
+    recordGenericAttempt(rateKeyReg);
     const { email, pseudo, password, poste, niveau } = req.body;
     if (!email || !pseudo || !password || !poste || !niveau) return reply.code(400).send({ error: 'email, pseudo, password, poste, niveau requis' });
     if (!isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
     if (password.length < 6) return reply.code(400).send({ error: 'mot de passe trop court (6 min)' });
     if (!pseudo.trim() || pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
+    if (pseudo.trim().length > 24) return reply.code(400).send({ error: 'pseudo trop long (24 max)' });
+    if (!/^[a-zA-Z0-9._-]+$/.test(pseudo.trim())) return reply.code(400).send({ error: 'pseudo: caractères autorisés a-z 0-9 . _ -' });
     if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
     const emailNorm = email.trim().toLowerCase();
     const hash = await hashPassword(password);
@@ -54,6 +60,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
         try { await db.insert(players).values({ pseudo: pseudo.trim(), poste, niveau }).returning(); } catch {}
       }
       const token = signToken({ id: row.id, email: row.email, pseudo: row.pseudo, role: initialRole });
+      reply.setCookie('token', token, cookieOpts);
       const userOut = { id: row.id, email: row.email, pseudo: row.pseudo, poste: row.poste, niveau: row.niveau, role: initialRole, emailVerified: false };
       if (process.env.NODE_ENV === 'production') {
         return reply.code(201).send({ user: userOut, token, message: 'Compte créé — vérifie ton email' });
@@ -91,11 +98,15 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     const emailVerified = Boolean(user.emailVerified ?? user.email_verified);
     const role = user.role || 'user';
     const token = signToken({ id: user.id, email: user.email, pseudo: user.pseudo, role });
+    reply.setCookie('token', token, cookieOpts);
     return reply.send({ user: { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, role, emailVerified }, token, emailVerified, role });
   });
 
   app.get('/api/auth/me', async (req, reply) => {
-    const payload = authFromRequest(req);
+    let payload = authFromRequest(req);
+    if (!payload && req.cookies?.token) {
+      try { payload = verifyToken(req.cookies.token); } catch {}
+    }
     if (!payload) return reply.code(401).send({ error: 'non authentifié' });
     const target = getUsersTable();
     const rows = await db.select().from(target);
@@ -106,7 +117,10 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     return { id: user.id, email: user.email, pseudo: user.pseudo, poste: user.poste, niveau: user.niveau, role, emailVerified, email_verified: emailVerified ? 1 : 0 };
   });
 
-  app.post('/api/auth/logout', async () => ({ ok: true }));
+  app.post('/api/auth/logout', async (req, reply) => {
+    reply.clearCookie('token', { path: '/' });
+    return { ok: true };
+  });
 
   app.post('/api/auth/verify-email', async (req, reply) => {
     const { token } = req.body || {};
@@ -132,10 +146,14 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     } catch {}
     const role = user.role || 'user';
     const newToken = signToken({ id: user.id, email: user.email, pseudo: user.pseudo, role });
+    reply.setCookie('token', newToken, cookieOpts);
     return { ok: true, user: { id: user.id, email: user.email, pseudo: user.pseudo, role, emailVerified: true }, token: newToken };
   });
 
   app.post('/api/auth/resend-verification', async (req, reply) => {
+    const rateKeyResend = getIpKey(req, 'resend');
+    if (isGenericRateLimited(rateKeyResend)) return reply.code(429).send({ error: 'trop de demandes, réessaie dans 15 minutes' });
+    recordGenericAttempt(rateKeyResend);
     const { email } = req.body || {};
     if (!email || !isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
     const emailNorm = email.trim().toLowerCase();
@@ -163,6 +181,9 @@ export default async function authRoutes(app, { db, pool, users, players }) {
   });
 
   app.post('/api/auth/forgot', async (req, reply) => {
+    const rateKeyForgot = getIpKey(req, 'forgot');
+    if (isGenericRateLimited(rateKeyForgot)) return reply.code(429).send({ error: 'trop de demandes, réessaie dans 15 minutes' });
+    recordGenericAttempt(rateKeyForgot);
     const { email } = req.body || {};
     if (!email || !isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
     const emailNorm = email.trim().toLowerCase();
@@ -233,6 +254,8 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     }
     if (pseudo && pseudo.trim() !== user.pseudo) {
       if (pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
+      if (pseudo.trim().length > 24) return reply.code(400).send({ error: 'pseudo trop long (24 max)' });
+      if (!/^[a-zA-Z0-9._-]+$/.test(pseudo.trim())) return reply.code(400).send({ error: 'pseudo: caractères autorisés a-z 0-9 . _ -' });
       if (isBlocked(pseudo.trim())) return reply.code(400).send({ error: blockedReason(pseudo.trim()) });
       data.pseudo = pseudo.trim();
     }
@@ -252,6 +275,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
       data._verificationTokenRaw = vTokenRaw;
     }
     try {
+      const ALLOWED_COLS = new Set(['email','pseudo','poste','niveau','email_verified','verification_token','verification_expires']);
       const setClauses = [];
       const vals = [];
       let idx = 1;
@@ -262,9 +286,11 @@ export default async function authRoutes(app, { db, pool, users, players }) {
         else if (k === 'verificationToken') dbCol = 'verification_token';
         else if (k === 'verificationExpires') dbCol = 'verification_expires';
         if (k === 'email_verified' || k === 'verification_token' || k === 'verification_expires') dbCol = k;
+        if (!ALLOWED_COLS.has(dbCol)) return reply.code(400).send({ error: `colonne non autorisée: ${dbCol}` });
         setClauses.push(`${dbCol} = $${idx++}`);
         vals.push(v);
       }
+      if (!setClauses.length) return reply.code(400).send({ error: 'rien à mettre à jour' });
       vals.push(req.user.id);
       const filteredData = Object.fromEntries(Object.entries(data).filter(([k])=>!k.startsWith('_')));
       const { rows: upd } = await pool.query(`UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, email, pseudo, poste, niveau, role, email_verified, created_at`, vals).catch(async () => {
@@ -285,6 +311,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
       }
       const out = { id: updated.id ?? user.id, email: updated.email ?? data.email ?? user.email, pseudo: updated.pseudo ?? data.pseudo ?? user.pseudo, poste: updated.poste ?? data.poste ?? user.poste, niveau: updated.niveau ?? data.niveau ?? user.niveau, role: user.role || 'user', emailVerified: Boolean(updated.email_verified ?? updated.emailVerified ?? 0) };
       const token = signToken({ id: out.id, email: out.email, pseudo: out.pseudo, role: out.role });
+      reply.setCookie('token', token, cookieOpts);
       let extra = {};
       if (emailChanged) {
         extra.message = 'Email changé — revérifie ton adresse';
@@ -344,6 +371,7 @@ export default async function authRoutes(app, { db, pool, users, players }) {
     } catch (e) {
       try { await db.delete(target).where(eq(target.id, userId)); } catch {}
     }
+    reply.clearCookie('token', { path: '/' });
     return { ok: true };
   });
 }

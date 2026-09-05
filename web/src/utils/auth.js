@@ -9,7 +9,7 @@ export const getAuthHeaders = () => {
 
 export const authFetch = (url, opts = {}) => {
   const headers = { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(opts.headers || {}) };
-  return fetch(`${API}${url}`, { ...opts, headers });
+  return fetch(`${API}${url}`, { ...opts, headers, credentials: 'include' });
 };
 
 export const useAuth = () => {

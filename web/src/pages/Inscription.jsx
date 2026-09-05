@@ -12,7 +12,7 @@ const Inscription = ({ onDone, onBack }) => {
     e.preventDefault();
     setErr('');
     const res = await fetch(`${API}/api/players`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ pseudo, poste, niveau })
     });
     if (!res.ok) { setErr((await res.json()).error); return; }
