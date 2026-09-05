@@ -37,8 +37,13 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
       setBleue1(picked[0].pseudo); setRouge1(picked[1].pseudo);
       setBleue2(''); setRouge2('');
     } else {
-      setBleue1(picked[0].pseudo); setBleue2(picked[1].pseudo);
-      setRouge1(picked[2].pseudo); setRouge2(picked[3].pseudo);
+      // Joueurs ET postes aléatoires : chaque équipe a 1 Attaque + 1 Défense, tirage qui prend qui
+      const bleue = [picked[0], picked[1]];
+      const rouge = [picked[2], picked[3]];
+      if (Math.random() < 0.5) bleue.reverse();
+      if (Math.random() < 0.5) rouge.reverse();
+      setBleue1(bleue[0].pseudo); setBleue2(bleue[1].pseudo);
+      setRouge1(rouge[0].pseudo); setRouge2(rouge[1].pseudo);
     }
     setIsRandom(true);
     setTimeout(() => setIsRandom(false), 600);
