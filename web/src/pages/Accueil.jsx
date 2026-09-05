@@ -102,6 +102,7 @@ const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
               </div>
             ))}
           </div>
+          <div className="h-6" />
         </>
       )}
     </div>
