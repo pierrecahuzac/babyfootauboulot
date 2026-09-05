@@ -13,23 +13,25 @@ export const normalizeMatch = (m) => {
 };
 
 export const calculateClassement = (allPlayers, allMatches) => {
-  const classement = allPlayers.map(p => {
-    let v = 0, d = 0;
-    for (const raw of allMatches) {
-      const m = normalizeMatch(raw);
-      if (!m.teamBleue || !m.teamRouge) continue;
-      const inBleue = m.teamBleue.some(x => x.pseudo === p.pseudo || x.id === p.id);
-      const inRouge = m.teamRouge.some(x => x.pseudo === p.pseudo || x.id === p.id);
-      if (!inBleue && !inRouge) continue;
-      const winBleue = m.scoreBleue > m.scoreRouge;
-      const winRouge = m.scoreRouge > m.scoreBleue;
-      if ((inBleue && winBleue) || (inRouge && winRouge)) v++;
-      else if ((inBleue && winRouge) || (inRouge && winBleue)) d++;
-      // égalité = pas compté comme défaite/victoire (match nul ignoré ici)
-    }
-    const total = v + d;
-    return { ...p, victoires: v, defaites: d, ratio: total ? Math.round((v / total) * 100) : 0, total };
-  });
+  const classement = allPlayers
+    .filter(p => p.pseudo !== 'admin')
+    .map(p => {
+      let v = 0, d = 0;
+      for (const raw of allMatches) {
+        const m = normalizeMatch(raw);
+        if (!m.teamBleue || !m.teamRouge) continue;
+        const inBleue = m.teamBleue.some(x => x.pseudo === p.pseudo || x.id === p.id);
+        const inRouge = m.teamRouge.some(x => x.pseudo === p.pseudo || x.id === p.id);
+        if (!inBleue && !inRouge) continue;
+        const winBleue = m.scoreBleue > m.scoreRouge;
+        const winRouge = m.scoreRouge > m.scoreBleue;
+        if ((inBleue && winBleue) || (inRouge && winRouge)) v++;
+        else if ((inBleue && winRouge) || (inRouge && winBleue)) d++;
+        // égalité = pas compté comme défaite/victoire (match nul ignoré ici)
+      }
+      const total = v + d;
+      return { ...p, victoires: v, defaites: d, ratio: total ? Math.round((v / total) * 100) : 0, total };
+    });
   classement.sort((a, b) => b.victoires - a.victoires || b.ratio - a.ratio);
   return classement;
 };
