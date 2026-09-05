@@ -71,8 +71,6 @@ const Accueil = ({ players, onNav, user, ligue, onLigues, onRoadmap }) => {
         <button onClick={() => onNav('match')} className="w-full bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white py-3 rounded-xl font-medium text-sm">Nouveau match — {user.pseudo}</button>
       )}
 
-      {user && <button onClick={() => onNav('inscription')} className="w-full border border-dashed border-zinc-300 dark:border-zinc-600 py-2.5 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">+ Ajouter un joueur invité (sans compte)</button>}
-
       <button onClick={() => (onRoadmap ? onRoadmap() : onNav('roadmap'))} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">📋 Voir la roadmap</button>
 
       {!user ? (

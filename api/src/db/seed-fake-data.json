@@ -1,0 +1,90 @@
+{
+  "users": [
+    {
+      "email": "demo@example.com",
+      "pseudo": "demo",
+      "poste": "Attaque",
+      "niveau": "Intermédiaire",
+      "password": "demo1234"
+    },
+    {
+      "email": "marie@example.com",
+      "pseudo": "marie_duchamp",
+      "poste": "Attaque",
+      "niveau": "Débutant",
+      "password": "demo1234"
+    },
+    {
+      "email": "jean@example.com",
+      "pseudo": "jean_petit",
+      "poste": "Défense",
+      "niveau": "Intermédiaire",
+      "password": "demo1234"
+    },
+    {
+      "email": "sophie@example.com",
+      "pseudo": "sophie_mercier",
+      "poste": "Attaque / Défense",
+      "niveau": "Confirmé",
+      "password": "demo1234"
+    },
+    {
+      "email": "antoine@example.com",
+      "pseudo": "antoine_you",
+      "poste": "Défense",
+      "niveau": "Débutant",
+      "password": "demo1234"
+    },
+    {
+      "email": "charlie@example.com",
+      "pseudo": "charlie_test",
+      "poste": "Attaque",
+      "niveau": "Intermédiaire",
+      "password": "demo1234"
+    }
+  ],
+  "ligue": {
+    "name": "Ligue Demo",
+    "slug": "ligue-demo",
+    "description": "Ligue de test pour comptes démo",
+    "is_private": true,
+    "owner_email": "demo@example.com",
+    "invite_code": "DEMO01"
+  },
+  "matches": [
+    {
+      "format": "1v1",
+      "team_bleue": [{"id": 2, "pseudo": "demo"}],
+      "team_rouge": [{"id": 5, "pseudo": "charlie_test"}],
+      "score_bleue": 10,
+      "score_rouge": 5
+    },
+    {
+      "format": "1v1",
+      "team_bleue": [{"id": 3, "pseudo": "jean_petit"}],
+      "team_rouge": [{"id": 4, "pseudo": "sophie_mercier"}],
+      "score_bleue": 10,
+      "score_rouge": 3
+    },
+    {
+      "format": "2v2",
+      "team_bleue": [
+        {"id": 2, "pseudo": "demo", "poste": "Attaque"},
+        {"id": 3, "pseudo": "jean_petit", "poste": "Défense"}
+      ],
+      "team_rouge": [
+        {"id": 4, "pseudo": "sophie_mercier", "poste": "Attaque"},
+        {"id": 5, "pseudo": "charlie_test", "poste": "Défense"}
+      ],
+      "score_bleue": 8,
+      "score_rouge": 10
+    },
+    {
+      "format": "1v1",
+      "team_bleue": [{"id": 5, "pseudo": "charlie_test"}],
+      "team_rouge": [{"id": 6, "pseudo": "nouvel_user"}],
+      "score_bleue": 5,
+      "score_rouge": 10
+    }
+  ]
+}
