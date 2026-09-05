@@ -11,22 +11,45 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant en prod}
   api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
     env_file: .env
     command: npm start
+    volumes: !reset []
+    ports:
+      - "127.0.0.1:${PORT:-33333}:${PORT:-33333}"
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL manquant en prod}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant en prod - 32+ chars}
+      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN manquant en prod}
       NODE_ENV: production
     restart: always
   web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "${VITE_API_URL:?VITE_API_URL manquant en prod - ex: https://app.babyfootauboulot.dev}"
     env_file: .env
-    command: npm start
+    command: npx vite preview --host 0.0.0.0 --port 55174
+    volumes: !reset []
+    ports:
+      - "127.0.0.1:${WEB_PORT:-55174}:${WEB_PORT:-55174}"
     environment:
       NODE_ENV: production
     restart: always
   landing:
+    build:
+      context: ./landing
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_APP_URL: "${PUBLIC_APP_URL:?PUBLIC_APP_URL manquant en prod - ex: https://app.babyfootauboulot.dev}"
     env_file: .env
-    command: npm start
+    command: npm run preview -- --host 0.0.0.0 --port 55175
+    volumes: !reset []
+    ports:
+      - "127.0.0.1:${LANDING_PORT:-55175}:${LANDING_PORT:-55175}"
     environment:
       NODE_ENV: production
     restart: always
