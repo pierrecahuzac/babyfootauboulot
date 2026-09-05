@@ -47,9 +47,9 @@ Thumbs.db
 # (garde docker-compose.yml et Dockerfiles, ignore overrides locaux)
 docker-compose.override.yml
 
-# Docs privés (conversation brute)
-documentation/CONVERSATION_*.md
-documentation/SESSION_*.md
+# Docs (seul cahier sur GitHub)
+documentation/*
+!documentation/cahier-des-charges-babyfoot.md
 
 # DB data (si volume local)
 pgdata/
