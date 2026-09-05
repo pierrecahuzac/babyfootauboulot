@@ -36,34 +36,46 @@
     "type": "revision"
   },
   {
+    "done": true,
+    "label": "Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)",
+    "version": "0.07",
+    "type": "revision"
+  },
+  {
+    "done": true,
+    "label": "1v1 sans poste + tirage joueurs+postes aléatoire",
+    "version": "0.08",
+    "type": "fix"
+  },
+  {
     "done": false,
     "label": "Système de tournoi — Solo, Duo, équipe choisie, équipe aléatoire",
-    "version": "0.07",
+    "version": "0.09",
     "type": "feature",
     "badge": "TODO"
   },
   {
     "done": false,
     "label": "Stats par poste (meilleur attaquant/défenseur)",
-    "version": "0.08",
-    "type": "feature"
-  },
-  {
-    "done": false,
-    "label": "Duos qui gagnent le plus",
-    "version": "0.09",
-    "type": "feature"
-  },
-  {
-    "done": false,
-    "label": "Filtrage stats par période (semaine/mois)",
     "version": "0.10",
     "type": "feature"
   },
   {
     "done": false,
-    "label": "Gestion ligue : renommer, régénérer code, kicker, quitter",
+    "label": "Duos qui gagnent le plus",
     "version": "0.11",
+    "type": "feature"
+  },
+  {
+    "done": false,
+    "label": "Filtrage stats par période (semaine/mois)",
+    "version": "0.12",
+    "type": "feature"
+  },
+  {
+    "done": false,
+    "label": "Gestion ligue : renommer, régénérer code, kicker, quitter",
+    "version": "0.13",
     "type": "feature"
   }
 ]

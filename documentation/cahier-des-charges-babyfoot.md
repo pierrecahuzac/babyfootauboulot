@@ -30,11 +30,11 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - Via `users` (avec email/mdp) ou `players` (invité). `posteColor`/`niveauColor` + avatar gradient `avatarBg` (`web/src/utils/helpers.js`)
 
 ### 3.4 Création d’un match (FAIT, évolué)
-- Format `1v1` (1 joueur/équipe) / `2v2` (2/équipe)
-- **En 2v2 chaque liste = un poste** : `Bleue: ⚡ Attaque + 🛡️ Défense`, `Rouge: idem` (`web/src/App.jsx:CreateMatch` `sel(...,posteLabel)`). En `1v1` poste=`Les 2`.
-- Sélection parmi les membres de la ligue courante, `team_bleue/rouge: [{id,pseudo,poste}]`, `score_bleue/rouge`
-- Validation `validateMatchPayload` (1v1=1, 2v2=2, pas de doublon) + `randomTeams`/`shuffle` (`🎲 Tirage aléatoire` 1v1=2 joueurs / 2v2=4 joueurs distincts)
-- Stockage JSONB `team_bleue/rouge` + colonnes legacy `team_a/b` syncées, `ligue_id` si ligue
+- Format `1v1` (1 joueur/équipe, **sans poste** — solo joue tous les postes) / `2v2` (2/équipe)
+- **En 2v2 chaque liste = un poste** : `Bleue: ⚡ Attaque + 🛡️ Défense`, `Rouge: idem` (`web/src/App.jsx:CreateMatch` `sel(...,posteLabel)`). En `1v1` pas de `poste` (`CreateMatch.jsx:toTeam` sans poste, `MatchDetail.jsx`/`Stats.jsx` masquent `· poste`).
+- Sélection parmi les membres de la ligue courante, `team_bleue/rouge: [{id,pseudo,poste}]` (`1v1` sans `poste`), `score_bleue/rouge`
+- Validation `validateMatchPayload` (1v1=1, 2v2=2, pas de doublon) + `randomTeams`/`shuffle` (`🎲 Tirage aléatoire` joueurs **+ postes** : `1v1`=2 joueurs, `2v2`=4 joueurs + `Attaque/Défense` aléatoire par équipe via `reverse()` 50%)
+- Stockage JSONB `team_bleue/rouge` + colonnes legacy `team_a/b` syncées, `ligue_id` si ligue. Seed `1v1` sans poste.
 
 ### 3.5 Suivi des matchs et stats (FAIT)
 - Historique 50 derniers `GET /api/matches`
@@ -48,11 +48,13 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - [x] `0.04` Stats classement + historique date (`ven. 05 sept.`)
 - [x] `0.05` UI clair épuré + accès protégé + fix déconnexion
 - [x] `0.06` Match détail + bordure vainqueur
-- [ ] `0.07` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
-- [ ] `0.08` Stats par poste
-- [ ] `0.09` Duos gagnants
-- [ ] `0.10` Filtrage stats période
-- [ ] `0.11` Gestion ligue (renommer/code/kicker/quitter)
+- [x] `0.07` Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)
+- [x] `0.08` 1v1 sans poste + tirage joueurs+postes aléatoire
+- [ ] `0.09` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
+- [ ] `0.10` Stats par poste
+- [ ] `0.11` Duos gagnants
+- [ ] `0.12` Filtrage stats période
+- [ ] `0.13` Gestion ligue (renommer/code/kicker/quitter)
 > `web/src/pages/Roadmap.jsx` lit `roadmap.json` généré depuis `ROADMAP.md` — synchro temps réel app ↔ docs
 
 ## 4. Modèle de données (réel)
