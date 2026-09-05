@@ -48,8 +48,11 @@ const randomDate = (daysAgo = 30) => {
 
 const args = process.argv.slice(2);
 const shouldClean = args.includes('--clean') || args.includes('-c');
-const countUsers = 30;
-const ligueCount = 5;
+// Mode démo prod demandé : 10 users + 3 ligues + ~40 matchs (si --demo ou SEED_DEMO=1)
+// Sinon mode complet dev : 30 users + 5 ligues + 120 matchs
+const isDemo = args.includes('--demo') || process.env.SEED_DEMO === '1';
+const countUsers = isDemo ? 10 : 30;
+const ligueCount = isDemo ? 3 : 5;
 
 async function main() {
   pool = await createPool();
@@ -222,7 +225,7 @@ async function main() {
   for (const lig of ligues) {
     const { rows: members } = await pool.query(`SELECT u.id, u.pseudo, u.poste FROM users u JOIN ligue_members m ON m.user_id=u.id WHERE m.ligue_id=$1`, [lig.id]);
     if (members.length < 2) continue;
-    const matchCount = 24; // 24 par ligue → 120 total pour 5 ligues, scores serrés et larges
+    const matchCount = isDemo ? 14 : 24; // démo: 14×3=42 matchs, complet: 24×5=120
     for (let k = 0; k < matchCount; k++) {
       const format = Math.random() > 0.35 ? '2v2' : '1v1';
       const need = format === '1v1' ? 2 : 4;
