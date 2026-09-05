@@ -1,7 +1,19 @@
-const Matchs = ({ matches, onSelect }) => {
+const Matchs = ({ matches, onSelect, ligues, currentLigue, onSelectLigue, onHandleLigueChange }) => {
   if (!matches) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Chargement des matchs…</p>;
+  
   return (
     <div className="space-y-6">
+      <div className="mb-3">
+        <select value={currentLigue || ''} onChange={(e)=>onHandleLigueChange(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
+          <option value="">— Ligue —</option>
+          {ligues.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select>
+      </div>
+      <div className="mt-3">
+        <button onClick={()=>safeSetView('ligues')} className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 rounded-lg font-medium text-xs hover:bg-zinc-50">
+          Gérer ligues
+        </button>
+      </div>
       <div>
         <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">Derniers matchs</h2>
         <div className="space-y-2 mt-3">

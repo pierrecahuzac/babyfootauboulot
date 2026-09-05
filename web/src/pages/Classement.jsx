@@ -1,12 +1,19 @@
-const Classement = ({ classement }) => {
+const Classement = ({ classement, ligues, currentLigue, onSelectLigue, onHandleLigueChange }) => {
   if (!classement) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Chargement du classement…</p>;
+ 
   return (
     <div className="space-y-6">
+      <div className="mb-3">
+        <select value={currentLigue || ''} onChange={(e)=>onHandleLigueChange(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
+          <option value="">— Ligue —</option>
+          {ligues.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select>
+      </div>
       <div>
         <h2 className="font-semibold text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">🏆</span> Classement
         </h2>
-        <div className="border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-700 mt-3 bg-white dark:bg-zinc-800">
+        <div className="border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-700 bg-white dark:bg-zinc-800 mt-3">
           {classement.length===0 && <p className="p-8 text-sm text-zinc-500 text-center">Pas encore de matchs — lance le premier !</p>}
           {classement.map((p,i)=>{
             const isTop = i < 3;

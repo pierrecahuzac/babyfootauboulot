@@ -126,6 +126,10 @@ const App = () => {
     setView('accueil');
   };
 
+  const handleLigueChange = (id) => {
+    setCurrentLigue(Number(id));
+  };
+
   const protectedViews = new Set(['match','classement','matchs','ligues','profil','admin','inscription','matchDetail']);
   const safeSetView = (v) => {
     if (protectedViews.has(v) && !user) { setView('login'); return; }
@@ -167,14 +171,9 @@ const App = () => {
         </header>
 
         {user && <div className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 px-5 py-2 text-xs text-zinc-600 dark:text-zinc-400 flex justify-between"><span>{user.pseudo} · {user.poste} · {user.niveau}</span><span className="hidden sm:inline text-zinc-500">{user.email}</span></div>}
-        {user && (
+{user && (
           <div className="px-4 sm:px-5 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2 text-xs">
-            <span className="font-semibold text-zinc-500 dark:text-zinc-400 tracking-wide text-[11px] uppercase">Ligue</span>
-            <select value={currentLigue || ''} onChange={e=>selectLigue(e.target.value)} className="flex-1 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-2 bg-white dark:bg-zinc-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
-              <option value="">— choisir —</option>
-              {ligues.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-            <button onClick={()=>setView('ligues')} className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 rounded-lg font-medium text-xs hover:bg-zinc-50">Gérer</button>
+            <span className="font-semibold text-zinc-500 dark:text-zinc-400 tracking-wide text-[11px] uppercase">{user.pseudo}</span>
           </div>
         )}
 
@@ -189,8 +188,8 @@ const App = () => {
           {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'ligues' && (user ? <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'match' && (user ? <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); safeSetView('classement'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'classement' && (user ? <Classement classement={stats} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'matchs' && (user ? <Matchs matches={matches} onSelect={openMatch} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+{view === 'classement' && (user ? <Classement classement={stats} ligues={ligues} currentLigue={currentLigue} onSelectLigue={selectLigue} onHandleLigueChange={handleLigueChange} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+           {view === 'matchs' && (user ? <Matchs matches={matches} onSelect={openMatch} ligues={ligues} currentLigue={currentLigue} onSelectLigue={selectLigue} onHandleLigueChange={handleLigueChange} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} ligue={ligues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId))} onBack={()=>safeSetView('matchs')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'roadmap' && <Roadmap />}
         </main>
