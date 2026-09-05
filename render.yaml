@@ -19,7 +19,7 @@ services:
       - key: CORS_ORIGIN
         value: https://app.babyfootauboulot.vercel.app,https://babyfootauboulot.vercel.app
       - key: ADMIN_EMAILS
-        value: admin@example.com
+        sync: false # ex: cahuzac.p@gmail.com — à renseigner dans Render Dashboard (pas en git)
       # Optionnel
       # - key: JWT_EXPIRES
       #   value: 7d
