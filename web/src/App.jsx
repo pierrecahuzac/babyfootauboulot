@@ -22,6 +22,8 @@ const App = () => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('verify')) return 'verify';
     if (p.get('reset')) return 'reset';
+    const h = (window.location.hash || '').replace(/^#/, '');
+    if (h === 'register' || h === 'inscription') return 'register';
     return 'accueil';
   });
   const [players, setPlayers] = useState([]);
@@ -42,12 +44,19 @@ const App = () => {
   const [pendingResetToken, setPendingResetToken] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
 
-  // nettoie les tokens dans l'URL (anti Referer/history leak R7)
+  // nettoie les tokens dans l'URL (anti Referer/history leak R7) + gère #register/#inscription depuis landing
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.has('verify') || p.has('reset') || p.has('token')) {
       window.history.replaceState({}, '', window.location.pathname);
     }
+    const handleHash = () => {
+      const h = (window.location.hash || '').replace(/^#/, '');
+      if (h === 'register' || h === 'inscription') setView('register');
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
   const refresh = async (ligueId = currentLigue) => {
