@@ -18,7 +18,7 @@ services:
       - key: JWT_SECRET
         sync: false # 32+ chars, génère avec: openssl rand -base64 48
       - key: CORS_ORIGIN
-        value: https://babyfoot-app.vercel.app,https://babyfoot-landing.vercel.app
+        value: https://app.babyfoot.vercel.app,https://babyfoot.vercel.app
         sync: false
       - key: ADMIN_EMAILS
         value: admin@example.com
