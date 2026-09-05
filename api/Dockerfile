@@ -7,7 +7,7 @@ COPY drizzle.config.js ./drizzle.config.js
 COPY src ./src
 RUN chown -R node:node /app
 USER node
-# Koyeb attend 8000 par défaut, Render 10000, local 33333 -> PORT env dynamique
-EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://localhost:${PORT:-8000}/health || exit 1
+# Render attend 10000, local 33333 -> PORT env dynamique
+EXPOSE 10000
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://localhost:${PORT:-10000}/health || exit 1
 CMD ["npm", "start"]
