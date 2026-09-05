@@ -1,7 +1,8 @@
-# koyeb.yaml — Déploiement API Babyfoot sur Koyeb (alternative gratuite à Render)
-# Docs: https://www.koyeb.com/docs/reference/koyeb-yaml
-# Usage: push sur main -> auto-deploy si connecté via GitHub
-# Ou CLI: koyeb service create --definition koyeb.yaml
+# koyeb.yaml — ⚠️ DEPRECATED 2026-02-17 : Koyeb a rejoint Mistral AI
+# Koyeb n'accepte plus de nouveaux comptes gratuits (Pro $ minimum requis)
+# Gardé pour référence. Voir api/fly.toml (Fly.io) ou Zeabur pour alternative gratuite.
+# Docs: https://www.koyeb.com/blog/koyeb-is-joining-mistral-ai-to-build-the-future-of-ai-infrastructure
+# Usage historique: koyeb service create --definition koyeb.yaml
 
 services:
   - name: babyfootauboulot-api
