@@ -17,7 +17,7 @@ services:
       - key: JWT_SECRET
         sync: false # 32+ chars, génère avec: openssl rand -base64 48
       - key: CORS_ORIGIN
-        value: https://app.babyfootauboulot.vercel.app,https://babyfootauboulot.vercel.app
+        value: https://babyfootauboulot.vercel.app,https://babyfootauboulot-landing.vercel.app
       - key: ADMIN_EMAILS
         sync: false # ex: cahuzac.p@gmail.com — à renseigner dans Render Dashboard (pas en git)
       # Optionnel
