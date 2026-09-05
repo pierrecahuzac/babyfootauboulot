@@ -8,7 +8,7 @@ global.fetch = mockFetch;
 const mockPlayers = [
   { id:1, pseudo:'pierre_j', poste:'Attaque', niveau:'Confirmé' },
   { id:2, pseudo:'sarah_l', poste:'Défense', niveau:'Intermédiaire' },
-  { id:3, pseudo:'tom_m', poste:'Les 2', niveau:'Débutant' },
+  { id:3, pseudo:'tom_m', poste:'Attaque / Défense', niveau:'Débutant' },
   { id:4, pseudo:'lucas', poste:'Attaque', niveau:'Débutant' },
 ];
 

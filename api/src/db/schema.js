@@ -3,7 +3,7 @@ import { pgTable, serial, text, integer, jsonb, timestamp } from 'drizzle-orm/pg
 export const players = pgTable('players', {
   id: serial('id').primaryKey(),
   pseudo: text('pseudo').notNull().unique(),
-  poste: text('poste').notNull().$type(), // 'Attaque' | 'Défense' | 'Les 2'
+  poste: text('poste').notNull().$type(), // 'Attaque' | 'Défense' | 'Attaque / Défense'
   niveau: text('niveau').notNull().$type(), // 'Débutant' | 'Intermédiaire' | 'Confirmé'
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

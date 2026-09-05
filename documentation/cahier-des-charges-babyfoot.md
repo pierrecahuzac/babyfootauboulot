@@ -26,7 +26,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - Front `web/src/App.jsx` : état `ligues/currentLigue` (`localStorage babyfoot_ligue_id`), barre `🏆 Ligue` + `Gérer` → `Ligues` (liste, créer, rejoindre par code, `invite_code` affiché à partager).
 
 ### 3.3 Inscription joueur (FAIT, évolué)
-- Pseudo, poste préféré `Attaque/Défense/Les 2`, niveau `Débutant/Intermédiaire/Confirmé` (CHECK DB)
+- Pseudo, poste préféré `Attaque/Défense/Attaque / Défense`, niveau `Débutant/Intermédiaire/Confirmé` (CHECK DB)
 - Via `users` (avec email/mdp) ou `players` (invité). `posteColor`/`niveauColor` + avatar gradient `avatarBg` (`web/src/utils/helpers.js`)
 
 ### 3.4 Création d’un match (FAIT, évolué)

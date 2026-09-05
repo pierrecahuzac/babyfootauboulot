@@ -39,7 +39,7 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
       </label>
       <div className="text-sm font-bold">Poste
         <div className="flex gap-2 mt-1">
-          {['Défense','Attaque','Les 2'].map(v => (
+          {['Défense','Attaque','Attaque / Défense'].map(v => (
             <button type="button" key={v} onClick={()=>setPoste(v)} className={`flex-1 py-2.5 rounded-2xl border-2 font-black ${poste===v?'bg-emerald-500 text-white border-emerald-600':'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100'}`}>{v}</button>
           ))}
         </div>

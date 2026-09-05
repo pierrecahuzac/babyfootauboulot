@@ -34,7 +34,7 @@ const Inscription = ({ onDone, onBack }) => {
           {[
             { v:'Défense', col: poste==='Défense' ? 'bg-blue-500 text-white border-blue-600 shadow-lg scale-[1.02]' : 'bg-blue-50 text-blue-700 border-blue-200', icon:'🛡️' },
             { v:'Attaque', col: poste==='Attaque' ? 'bg-red-500 text-white border-red-600 shadow-lg scale-[1.02]' : 'bg-red-50 text-red-700 border-red-200', icon:'⚡' },
-            { v:'Les 2', col: poste==='Les 2' ? 'bg-gradient-to-r from-blue-500 to-red-500 text-white border-transparent shadow-lg scale-[1.02]' : 'bg-violet-50 text-violet-700 border-violet-200', icon:'🔄' },
+            { v:'Attaque / Défense', col: poste==='Attaque / Défense' ? 'bg-gradient-to-r from-blue-500 to-red-500 text-white border-transparent shadow-lg scale-[1.02]' : 'bg-violet-50 text-violet-700 border-violet-200', icon:'🔄' },
           ].map(o => (
             <button type="button" key={o.v} onClick={()=>setPoste(o.v)} className={`flex-1 py-3 rounded-2xl border-2 text-sm font-black transition flex items-center justify-center gap-1 ${o.col}`}>{o.icon} {o.v}</button>
           ))}

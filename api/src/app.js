@@ -21,7 +21,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
       CREATE TABLE IF NOT EXISTS players (
         id SERIAL PRIMARY KEY,
         pseudo TEXT UNIQUE NOT NULL,
-        poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2')),
+        poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2','Attaque / Défense')),
         niveau TEXT NOT NULL CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé')),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -32,7 +32,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
         email TEXT UNIQUE NOT NULL,
         pseudo TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2')),
+        poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2','Attaque / Défense')),
         niveau TEXT NOT NULL CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé')),
         role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin','user')),
         created_at TIMESTAMPTZ DEFAULT NOW()
@@ -80,8 +80,10 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_a INT`);
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_b INT`);
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS ligue_id INT REFERENCES ligues(id) ON DELETE CASCADE`);
-    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS poste TEXT CHECK (poste IN ('Attaque','Défense','Les 2'))`).catch(()=>{});
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS poste TEXT CHECK (poste IN ('Attaque','Défense','Les 2','Attaque / Défense'))`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS niveau TEXT CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé'))`).catch(()=>{});
+    await pool.query(`UPDATE users SET poste='Attaque / Défense' WHERE poste='Les 2'`).catch(()=>{});
+    await pool.query(`UPDATE players SET poste='Attaque / Défense' WHERE poste='Les 2'`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INT DEFAULT 0`);
     // Vérification email désactivée — auto-vérifie les comptes existants
     await pool.query(`UPDATE users SET email_verified=1 WHERE email_verified=0`).catch(()=>{});

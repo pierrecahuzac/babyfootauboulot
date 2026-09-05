@@ -113,7 +113,7 @@ describe('API intégration (mock DB) - 3 types: intégration', () => {
   it('POST /api/matches 1v1 et 2v2 + validation', async () => {
     await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'p1', poste: 'Attaque', niveau: 'Débutant' } });
     await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'p2', poste: 'Défense', niveau: 'Débutant' } });
-    await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'p3', poste: 'Les 2', niveau: 'Confirmé' } });
+    await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'p3', poste: 'Attaque / Défense', niveau: 'Confirmé' } });
     await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'p4', poste: 'Attaque', niveau: 'Intermédiaire' } });
 
     const m1 = await app.inject({ method: 'POST', url: '/api/matches', payload: { format: '1v1', team_bleue: [{ pseudo: 'p1' }], team_rouge: [{ pseudo: 'p2' }], score_bleue: 10, score_rouge: 7 } });

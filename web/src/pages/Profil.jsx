@@ -72,7 +72,7 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
           </label>
           <div className="text-sm font-medium">Poste
             <div className="flex gap-2 mt-1">
-              {['Défense','Attaque','Les 2'].map(v=> (
+              {['Défense','Attaque','Attaque / Défense'].map(v=> (
                 <button type="button" key={v} onClick={()=>setPoste(v)} className={`flex-1 py-2 rounded-lg border font-medium text-sm ${poste===v?'bg-violet-600 text-white border-violet-600':'bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600'}`}>{v}</button>
               ))}
             </div>

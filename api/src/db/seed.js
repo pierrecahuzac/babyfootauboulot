@@ -26,7 +26,7 @@ const genSlug = (name) => `${slugify(name)}-${crypto.randomBytes(2).toString('he
 
 const prenoms = ['pierre','sarah','lucas','tom','lea','zoe','max','nina','hugo','chloe','alex','milo','jules','louis','emma','jade','theo','nathan','paul','yann','ines','luna','noah','adam','manon','camille','arthur','gabriel','sacha','maeva'];
 const noms = ['dubois','martin','bernard','thomas','petit','robert','richard','durand','moreau','laurent','simon','michel','lefebvre','leroy','roux','david','blanc','garcia','chevalier','robin'];
-const postes = ['Attaque','Défense','Les 2'];
+const postes = ['Attaque','Défense','Attaque / Défense'];
 const niveaux = ['Débutant','Intermédiaire','Confirmé'];
 const ligueNames = ['Boulot','Boulot - Étage 1','Boulot - Étage 2','Afterwork Jeudi','Team Weekend'];
 
@@ -75,7 +75,7 @@ async function main() {
       email TEXT UNIQUE NOT NULL,
       pseudo TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
-      poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2')),
+      poste TEXT NOT NULL CHECK (poste IN ('Attaque','Défense','Les 2','Attaque / Défense')),
       role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin','user')),
       email_verified INT DEFAULT 0,
       verification_token TEXT,
@@ -140,10 +140,10 @@ async function main() {
   try {
     const { rows } = await pool.query(
       `INSERT INTO users (email, pseudo, password_hash, poste, niveau, role, email_verified) VALUES ($1,$2,$3,$4,$5,'admin',1) ON CONFLICT (email) DO UPDATE SET role='admin' RETURNING id, pseudo`,
-      ['admin@example.com', 'admin', adminHash, 'Les 2', 'Confirmé']
+      ['admin@example.com', 'admin', adminHash, 'Attaque / Défense', 'Confirmé']
     );
     if (rows[0]) {
-      users.push({ id: rows[0].id, pseudo: 'admin', poste: 'Les 2', niveau: 'Confirmé', email: 'admin@example.com', role: 'admin' });
+      users.push({ id: rows[0].id, pseudo: 'admin', poste: 'Attaque / Défense', niveau: 'Confirmé', email: 'admin@example.com', role: 'admin' });
       console.log(`  ✓ admin@example.com / admin1234 (admin système, pas joueur)`);
     }
   } catch (e) { console.error(`  ✗ admin: ${e.message}`); }

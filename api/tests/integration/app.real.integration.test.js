@@ -77,7 +77,7 @@ describe('API intégration DB réelle (babyfoot_test)', () => {
   it('GET /api/stats calcule classement avec vraie DB', async () => {
     await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'alice', poste: 'Attaque', niveau: 'Confirmé' } });
     await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'bob', poste: 'Défense', niveau: 'Débutant' } });
-    await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'carol', poste: 'Les 2', niveau: 'Intermédiaire' } });
+    await app.inject({ method: 'POST', url: '/api/players', payload: { pseudo: 'carol', poste: 'Attaque / Défense', niveau: 'Intermédiaire' } });
     await app.inject({ method: 'POST', url: '/api/matches', payload: { format: '1v1', team_bleue: [{ pseudo: 'alice' }], team_rouge: [{ pseudo: 'bob' }], score_bleue: 10, score_rouge: 5 } });
     await app.inject({ method: 'POST', url: '/api/matches', payload: { format: '1v1', team_bleue: [{ pseudo: 'bob' }], team_rouge: [{ pseudo: 'alice' }], score_bleue: 10, score_rouge: 8 } });
     await app.inject({ method: 'POST', url: '/api/matches', payload: { format: '1v1', team_bleue: [{ pseudo: 'alice' }], team_rouge: [{ pseudo: 'carol' }], score_bleue: 5, score_rouge: 10 } });

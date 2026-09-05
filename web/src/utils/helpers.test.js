@@ -4,7 +4,7 @@ import { posteColor, niveauColor, initials, avatarBg, shuffle, randomTeams, vali
 describe('helpers posteColor', () => {
   it('Attaque violet', () => expect(posteColor('Attaque')).toMatch(/violet/));
   it('Défense sky', () => expect(posteColor('Défense')).toMatch(/sky/));
-  it('Les 2 zinc', () => expect(posteColor('Les 2')).toMatch(/zinc/));
+  it('Les 2 zinc', () => expect(posteColor('Attaque / Défense')).toMatch(/zinc/));
 });
 
 describe('niveauColor', () => {

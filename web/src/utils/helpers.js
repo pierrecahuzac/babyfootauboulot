@@ -1,6 +1,8 @@
 export const posteColor = (poste) => {
   if (poste === 'Attaque') return 'bg-violet-50 text-violet-700 border-violet-200';
   if (poste === 'Défense') return 'bg-sky-50 text-sky-700 border-sky-200';
+  if (poste === 'Attaque / Défense') return 'bg-zinc-50 text-zinc-700 border-zinc-200';
+  if (poste === 'Les 2') return 'bg-zinc-50 text-zinc-700 border-zinc-200';
   return 'bg-zinc-50 text-zinc-700 border-zinc-200';
 };
 
