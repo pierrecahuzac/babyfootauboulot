@@ -30,7 +30,7 @@ const VerifyEmail = ({ user, onBack, onVerified }) => {
   };
   return (
     <div className="space-y-4">
-      <div className="text-center"><div className="text-4xl">✉️</div><h2 className="font-black text-xl">Vérifier ton email</h2><p className="text-sm text-zinc-500 dark:text-zinc-400">Colle le token reçu (dev: renvoyé à l'inscription)</p></div>
+      <div className="text-center"><div className="text-4xl">✉️</div><h2 className="font-black text-xl">Vérifier ton email</h2><p className="text-sm text-zinc-500 dark:text-zinc-400">Vérifie ta boîte mail et colle le token reçu</p></div>
       <form onSubmit={submit} className="space-y-3">
         <label className="block text-sm font-bold">Token<input value={token} onChange={e=>setToken(e.target.value)} placeholder="token 64 hex" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 font-mono text-xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required /></label>
         {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
