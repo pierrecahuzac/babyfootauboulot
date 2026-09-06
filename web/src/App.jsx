@@ -73,12 +73,26 @@ const App = () => {
     setMatches(s.matches ?? []);
   };
 
-  const loadMe = async () => {
+  const loadMe = async (retry = true) => {
     try {
       const r = await authFetch('/api/auth/me');
-      if (!r.ok) { setToken(null); setUser(null); return; }
+      if (!r.ok) {
+        // ne déconnecte (clear token) que sur auth invalide et si un token était stocké
+        if (r.status === 401 || r.status === 403 || r.status === 404) {
+          if (getToken()) setToken(null);
+          setUser(null);
+        } else {
+          setUser(null);
+          if (retry) setTimeout(() => loadMe(false), 2000);
+        }
+        return;
+      }
       setUser(await r.json());
-    } catch { setUser(null); }
+    } catch {
+      // erreur réseau (Render cold start) : garde le token intact
+      setUser(null);
+      if (retry) setTimeout(() => loadMe(false), 2000);
+    }
   };
 
   const loadLeagues = async () => {

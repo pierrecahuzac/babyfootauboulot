@@ -54,11 +54,13 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - [x] `0.8.2` Contexte ligue création match + sélecteur multi-ligues (`CreateMatch.jsx:91` bandeau `🏆 Ligue` + `App.jsx:195`)
 - [x] `0.8.3` Nettoyage UI pro (sans `demo@example.com`/`Token (dev)`/`En chantier`, `Tournament.jsx` `Disponible prochainement`, `landing` `AU BOULOT`)
 - [x] `0.8.4` Fiche joueur (clic `Home`/`Leaderboard` → `PlayerDetail.jsx` `V/D/ratio` + `10 matchs` + `← Retour`, sans `email/mdp`)
-- [ ] `0.9` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
-- [ ] `0.10` Stats par poste
-- [ ] `0.11` Duos gagnants
-- [ ] `0.12` Filtrage stats période
-- [ ] `0.13` Gestion ligue (renommer/code/kicker/quitter)
+- [x] `0.8.5` Refresh deco (`App.jsx:loadMe` résilient, garde `babyfoot_token` sur `500/réseau` + `retry`)
+- [x] `0.9` PWA installable (`vite-plugin-pwa` `manifest` `Babyfoot au boulot` + `sw.js` `workbox` `NetworkFirst` `api-cache`, `icon-192/512`)
+- [ ] `0.10` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
+- [ ] `0.11` Stats par poste
+- [ ] `0.12` Duos gagnants
+- [ ] `0.13` Filtrage stats période
+- [ ] `0.14` Gestion ligue (renommer/code/kicker/quitter)
 > `web/src/pages/Roadmap.jsx` lit `roadmap.json` (généré depuis `ROADMAP.md`) — synchro temps réel app ↔ docs
 
 ## 4. Modèle de données (réel)
