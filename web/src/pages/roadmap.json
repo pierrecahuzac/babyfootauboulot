@@ -54,6 +54,18 @@
     "type": "revision"
   },
   {
+    "done": true,
+    "label": "Contexte ligue en création de match + sélecteur multi-ligues",
+    "version": "0.8.2",
+    "type": "fix"
+  },
+  {
+    "done": true,
+    "label": "Nettoyage UI pro (suppression mentions dev frontend)",
+    "version": "0.8.3",
+    "type": "revision"
+  },
+  {
     "done": false,
     "label": "Système de tournoi — Solo, Duo, équipe choisie, équipe aléatoire",
     "version": "0.9",
