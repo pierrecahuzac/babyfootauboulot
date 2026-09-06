@@ -2,8 +2,12 @@ import { useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-const CreateMatch = ({ players, leagueId, ligueId, onDone, onBack }) => {
+const CreateMatch = ({ players, leagueId, ligueId, leagues, ligues, league, ligue, onLeagueChange, onLigueChange, onLeagues, onLigues, onDone, onBack }) => {
   const effectiveLeagueId = leagueId ?? ligueId;
+  const leaguesData = leagues ?? ligues ?? [];
+  const currentLeague = league ?? ligue ?? leaguesData.find(l => Number(l.id) === Number(effectiveLeagueId)) ?? null;
+  const handleLeagueChange = onLeagueChange ?? onLigueChange;
+  const handleLeagues = onLeagues ?? onLigues;
   const [format, setFormat] = useState('1v1');
   const [bleue1, setBleue1] = useState(''); const [bleue2, setBleue2] = useState('');
   const [rouge1, setRouge1] = useState(''); const [rouge2, setRouge2] = useState('');
@@ -83,6 +87,44 @@ const CreateMatch = ({ players, leagueId, ligueId, onDone, onBack }) => {
         <span className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center text-sm">⚔️</span>
         Nouveau match
       </h2>
+
+      {/* Contexte ligue — indispensable si plusieurs ligues */}
+      {currentLeague ? (
+        <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 flex items-center gap-3">
+          <span className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 flex items-center justify-center text-sm shrink-0">🏆</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold tracking-wide text-zinc-500 dark:text-zinc-400 uppercase">Ligue</p>
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{currentLeague.name}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{currentLeague.slug} · {currentLeague.is_private === 1 || currentLeague.is_private === true ? 'privée' : currentLeague.is_private === 0 ? 'publique' : ''}</p>
+          </div>
+          {handleLeagues && (
+            <button type="button" onClick={handleLeagues} className="shrink-0 border border-zinc-200 dark:border-zinc-600 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">Gérer</button>
+          )}
+        </div>
+      ) : effectiveLeagueId ? (
+        <div className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 text-xs text-zinc-600 dark:text-zinc-400">
+          Ligue #{effectiveLeagueId} — chargement…
+        </div>
+      ) : (
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-4 text-center">
+          <p className="font-semibold text-sm text-amber-900 dark:text-amber-200">Aucune ligue sélectionnée</p>
+          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Choisis une ligue pour créer le match — important si tu as plusieurs ligues.</p>
+          {handleLeagues && <button type="button" onClick={handleLeagues} className="mt-3 bg-violet-600 text-white px-4 py-2 rounded-full text-sm font-medium">Gérer mes ligues</button>}
+        </div>
+      )}
+
+      {leaguesData.length > 1 && handleLeagueChange ? (
+        <div>
+          <label className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">Changer de ligue</label>
+          <select value={effectiveLeagueId || ''} onChange={(e)=>handleLeagueChange(e.target.value)} className="mt-1 w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
+            <option value="">— Choisir une ligue —</option>
+            {leaguesData.map(l=> <option key={l.id} value={l.id}>{l.name} · {l.slug}</option>)}
+          </select>
+          <p className="text-[11px] text-zinc-500 mt-1">Le match sera enregistré dans cette ligue. Les joueurs affichés ci-dessous viennent de cette ligue.</p>
+        </div>
+      ) : currentLeague ? (
+        <p className="text-[11px] text-zinc-500 -mt-2">Le match sera enregistré dans cette ligue — les joueurs listés viennent de cette ligue.</p>
+      ) : null}
 
       <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
         <button type="button" onClick={()=>setFormat('1v1')} className={`flex-1 py-2.5 rounded-lg font-medium text-sm transition ${format==='1v1'?'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600': 'text-zinc-500'}`}>1 vs 1</button>
