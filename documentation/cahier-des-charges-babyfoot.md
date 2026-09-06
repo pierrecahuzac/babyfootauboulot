@@ -11,7 +11,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 
 ### 3.1 Auth — (FAIT)
 - `POST /api/auth/register` {email, pseudo, password(6+), poste, niveau, role} → JWT 7j `HS256` (`JWT_SECRET`, `ADMIN_EMAILS` → `admin`), `users` (`role admin|user`, `email_verified`, `verification_token` hash `sha256`)
-- `POST /api/auth/login` {email, password} → JWT + `role`, rate-limit `5/15min 429`, `POST /api/auth/verify-email`/`resend`/`forgot`/`reset` (hash, dev-only leak), `PATCH /me`/`change-password`/`DELETE /me`, `POST /api/players/:id/claim`
+ - `POST /api/auth/login` {email, password} → JWT + `role`, rate-limit `5/15min 429`, `POST /api/auth/verify-email`/`resend`/`forgot`/`reset` (hash, dev-only leak), `PATCH /me`/`change-password`/`DELETE /me` **RGPD** (`DELETE` exige `password`, anonymise `matches.team_bleue/rouge` → `Joueur supprimé deleted:true` via `api/src/utils/anonymize.js`, idem `DELETE /api/admin/users/:id`), `POST /api/players/:id/claim`
 - `GET /api/auth/me` (Bearer/`httpOnly` cookie) + `POST /api/auth/logout` + `middleware/auth` `requireAuth`/`requireAdmin`
 - Front `web/src/pages/*` (`Register`/`Login`/`Forgot`/`Reset`/`VerifyEmail`) + `Profil` + `Admin` (modération), header `👋 pseudo` `ADMIN` badge, `localStorage` + `authFetch`
 - Modération `utils/moderation.js` blocklist, rétro-compat `players` invité + `claim` vers `users`
@@ -37,7 +37,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - Stockage JSONB `team_bleue/rouge` + colonnes legacy `team_a/b` syncées, `ligue_id` si ligue. Seed `1v1` sans poste.
 
 ### 3.5 Suivi des matchs et stats (FAIT)
-- Historique 50 derniers `GET /api/matches`
+- Historique 50 derniers `GET /api/matches` (joueur supprimé → `Joueur supprimé` italique gris `MatchDetail.jsx:36`)
 - `GET /api/stats` → `calculateClassement(players,matches)` (`api/src/utils/stats.js`) : `victoires/défaites/ratio`, tri `victoires puis ratio`, `normalizeMatch` gère legacy `teamA/team_a`
 - Front `Stats` : podium `🥇🥈🥉` + `Derniers matchs` `Bleue ⚡/🛡️ vs Rouge` + score, filtré par ligue si sélectionnée
 
@@ -50,6 +50,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - [x] `0.06` Match détail + bordure vainqueur
 - [x] `0.07` Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)
 - [x] `0.08` 1v1 sans poste + tirage joueurs+postes aléatoire
+- [x] `0.08.1` RGPD suppression anonymisée (`Joueur supprimé`) + nav `Roadmap` (ex-Todo) + tests rapides (`quick.integration.test.js:1`) — DONE
 - [ ] `0.09` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
 - [ ] `0.10` Stats par poste
 - [ ] `0.11` Duos gagnants
@@ -87,8 +88,8 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 
 ## 7. Tests (FAIT)
 
-- **Back** `vitest` : unit `src/utils/stats.test.js` (12), intégration mock `tests/integration/app.integration.test.js` (5, `Fastify.inject` + mock DB), intégration réelle `tests/integration/app.real.integration.test.js` (7, vraie DB `babyfoot_test` via `tests/helpers/testDb.js` avec `TRUNCATE` + `initDb`), e2e `tests/e2e/api.e2e.test.js` (2, `RUN_E2E=1` → `localhost:33333`)
-- **Front** `vitest` + `jsdom` + `@testing-library/react` : unit `src/utils/helpers.test.js` (17, `posteColor`/`shuffle`…), intégration `src/App.integration.test.jsx` (4, `App` + `fetch` mock)
+- **Back** `vitest` : unit `src/utils/stats.test.js` (12) + `anonymize.test.js` (6) + intégration rapide `tests/integration/quick.integration.test.js` (5, `Fastify.inject` + mock DB, `DELETE` + `Joueur supprimé`), intégration mock/réelle historiques `app.integration.test.js`/`app.real` skip (obsolètes `POST /api/players`), e2e `tests/e2e/api.e2e.test.js` (2, `RUN_E2E=1` → `localhost:33333`)
+- **Front** `vitest` + `jsdom` + `@testing-library/react` : unit `src/utils/helpers.test.js` (17, `posteColor`/`niveauColor=emerald`…), intégration `src/App.integration.test.jsx` (4, `App` + `fetch` mock, `Roadmap` ex-Todo)
 - **E2E** `playwright` `web/e2e/app.e2e.spec.js` (5, `chromium`, `baseURL http://localhost:55174`) : accueil, inscription, tirage 1v1/2v2, stats
 - Scripts `api/package.json` : `test`, `test:unit`, `test:integration`, `test:integration:real`, `test:e2e`, `test:db:setup` ; `web/package.json` : `test`, `test:e2e`
 

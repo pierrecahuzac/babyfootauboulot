@@ -200,7 +200,7 @@ const App = () => {
             { id: 'match', label: 'Match', icon: '⚔️' },
             { id: 'classement', label: 'Classement', icon: '🏆' },
             { id: 'matchs', label: 'Matchs', icon: '⚽' },
-            { id: 'roadmap', label: 'Todo', icon: '📋' },
+            { id: 'roadmap', label: 'Roadmap', icon: '📋' },
           ].map(tab => (
             <button
               key={tab.id}

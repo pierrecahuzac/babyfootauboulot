@@ -48,6 +48,12 @@
     "type": "fix"
   },
   {
+    "done": true,
+    "label": "RGPD suppression anonymisée (Joueur supprimé) + Roadmap (ex-Todo) + tests rapides",
+    "version": "0.08.1",
+    "type": "revision"
+  },
+  {
     "done": false,
     "label": "Système de tournoi — Solo, Duo, équipe choisie, équipe aléatoire",
     "version": "0.09",

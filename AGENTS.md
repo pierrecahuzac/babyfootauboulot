@@ -29,11 +29,12 @@
 - **Vérification email désactivée** (pas de SMTP) : `api/src/routes/auth.js` `register` auto-vérifié (`email_verified=1`), `verify-email`/`resend-verification` -> `410`, `PATCH /me` email change ne reset plus. TODO revert `bebc59c` quand SMTP prêt.
 - `api/src/routes/ligues.js` : ligues démo publiques `is_private=0` visibles par tous. `GET /api/ligues` retourne publiques + privées du user.
 - `api/src/routes/matches.js` + `players.js` : `isPublicLigue` bypass `isMember` pour lecture sur ligues publiques (stats/matchs/players).
+- **RGPD suppression** : `api/src/utils/anonymize.js` `anonymizeMatchesForUser()` remplace `{pseudo}` par `Joueur supprimé deleted:true` dans `matches.team_bleue/rouge` (JSONB) avant `DELETE users`. Appelé par `DELETE /api/auth/me` (`auth.js:362` exige `password`) + `DELETE /api/admin/users/:id`. `MatchDetail.jsx:36` affiche en italique gris.
 
 ## 4. Frontend
 
-- `web/src/App.jsx` : router par `view` state, `#register`/`#inscription` depuis landing -> `register`, `VerifyEmail` désactivé (import retiré, banner `Email non vérifié` retiré).
-- **`1v1 sans poste`** : un joueur seul joue tous les postes. `CreateMatch.jsx` `toTeam` sans `poste` en `1v1`, `MatchDetail.jsx` + `Stats.jsx` masquent `· poste` si `format==='1v1'`.
+- `web/src/App.jsx` : router par `view` state, `#register`/`#inscription` depuis landing -> `register`, `VerifyEmail` désactivé (import retiré, banner `Email non vérifié` retiré). Nav bottom `Roadmap` (ex-Todo) `roadmap.json`.
+- **1v1 sans poste** : un joueur seul joue tous les postes. `CreateMatch.jsx` `toTeam` sans `poste` en `1v1`, `MatchDetail.jsx` + `Stats.jsx` masquent `· poste` si `format==='1v1'`.
 - `web/index.html` CSP `connect-src` aligné sur `<API>` + 2 domaines Vercel.
 
 ## 5. DB / Seed démo
