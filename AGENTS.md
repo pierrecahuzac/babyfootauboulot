@@ -33,8 +33,9 @@
 
 ## 4. Frontend
 
-- `web/src/App.jsx` : router par `view` state, `#register`/`#inscription` depuis landing -> `register`, `VerifyEmail` désactivé (import retiré, banner `Email non vérifié` retiré). Nav bottom `Roadmap` (ex-Todo) `roadmap.json`.
-- **1v1 sans poste** : un joueur seul joue tous les postes. `CreateMatch.jsx` `toTeam` sans `poste` en `1v1`, `MatchDetail.jsx` + `Stats.jsx` masquent `· poste` si `format==='1v1'`.
+- `web/src/App.jsx` : router par `view` state, `#register`/`#inscription` depuis landing -> `register`, `VerifyEmail` désactivé (import retiré, banner `Email non vérifié` retiré). Nav bottom 5 tabs `Accueil | Match | Classement | Matchs | Roadmap` (ex-Todo) `roadmap.json` temps réel (`ROADMAP.md` → `roadmap.json`).
+- **1v1 sans poste** : un joueur seul joue tous les postes. `CreateMatch.jsx` `toTeam` sans `poste` en `1v1`, `MatchDetail.jsx` + `Stats.jsx` masquent `· poste` si `format==='1v1'`. Tirage `randomTeams` joueurs + postes `reverse()` 50%.
+- `Accueil.jsx` : filtres `poste`/`niveau` (`GET /api/players?ligue_id=&poste=&niveau=`), barre `🏆 Ligue` + `Gérer`. `Classement.jsx`/`Matchs.jsx` : sélecteur ligue (retiré du header), podium `🥇🥈🥉`, bordure vainqueur `sky/rose`, `MatchDetail.jsx:36` RGPD `Joueur supprimé` italique gris.
 - `web/index.html` CSP `connect-src` aligné sur `<API>` + 2 domaines Vercel.
 
 ## 5. DB / Seed démo
@@ -50,7 +51,11 @@
 - `demo@example.com / demo1234` (user)
 - Tous les fakes `*@example.com / demo1234`
 
-## 7. Style / Vérif
+## 7. Docs / Git
+
+- `documentation/*` seul `cahier-des-charges-babyfoot.md` versionné (`/.gitignore:51`), `sessions/` jamais push (`:55`, local uniquement). `documentation/ROADMAP.md` + `web/src/pages/roadmap.json` synchro temps réel (SemVer `0.1`→`0.13`, `0.8.1` RGPD actuel).
+
+## 8. Style / Vérif
 
 - **Toujours répondre en français** :)
 - Réponses courtes, factuelles, avec références `fichier:ligne`.
