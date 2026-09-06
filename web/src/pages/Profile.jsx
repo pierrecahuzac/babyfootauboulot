@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { authFetch, setToken } from '../utils/auth.js';
 
-const Profil = ({ user, ligues, onUpdate, onLogout }) => {
+const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
+  const leaguesData = leagues ?? ligues ?? [];
   const [email, setEmail] = useState(user?.email || '');
   const [pseudo, setPseudo] = useState(user?.pseudo || '');
   const [poste, setPoste] = useState(user?.poste || 'Attaque');
@@ -96,15 +97,15 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
       </div>
 
       <div className="bg-white border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl p-4">
-        <p className="font-semibold text-sm">Mes ligues ({ligues.length})</p>
+        <p className="font-semibold text-sm">Mes ligues ({leaguesData.length})</p>
         <div className="mt-3 space-y-2">
-          {ligues.map(l=> (
+          {leaguesData.map(l=> (
             <div key={l.id} className="flex justify-between items-center text-sm border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 bg-zinc-50 dark:bg-zinc-700/50">
               <span className="font-medium truncate">{l.name}</span>
               <span className="text-xs font-mono bg-zinc-900 dark:bg-zinc-600 text-white px-2 py-1 rounded-full">{l.invite_code || l.inviteCode}</span>
             </div>
           ))}
-          {ligues.length===0 && <p className="text-xs text-zinc-500">Aucune ligue</p>}
+          {leaguesData.length===0 && <p className="text-xs text-zinc-500">Aucune ligue</p>}
         </div>
       </div>
 
@@ -130,4 +131,4 @@ const Profil = ({ user, ligues, onUpdate, onLogout }) => {
   );
 };
 
-export default Profil;
+export default Profile;

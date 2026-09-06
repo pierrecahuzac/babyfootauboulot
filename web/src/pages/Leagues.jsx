@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { authFetch } from '../utils/auth.js';
 
-const Ligues = ({ ligues, currentLigue, onSelect, onRefresh, user }) => {
+const Leagues = ({ leagues, ligues, currentLeague, currentLigue, onSelect, onRefresh, user }) => {
+  const leaguesData = leagues ?? ligues ?? [];
+  const current = currentLeague ?? currentLigue;
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [code, setCode] = useState('');
@@ -41,12 +43,12 @@ const Ligues = ({ ligues, currentLigue, onSelect, onRefresh, user }) => {
         <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100">Mes ligues privées</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Chaque ligue est isolée. Invite par code — pas de liste publique.</p>
       </div>
-      {ligues.length===0 && <p className="text-sm text-zinc-500 border border-dashed border-zinc-300 dark:border-zinc-600 p-4 rounded-xl text-center bg-zinc-50 dark:bg-zinc-800">Aucune ligue — crée la première !</p>}
+      {leaguesData.length===0 && <p className="text-sm text-zinc-500 border border-dashed border-zinc-300 dark:border-zinc-600 p-4 rounded-xl text-center bg-zinc-50 dark:bg-zinc-800">Aucune ligue — crée la première !</p>}
       <div className="space-y-2">
-        {ligues.map(l=> {
+        {leaguesData.map(l=> {
           const codeVal = l.invite_code || l.inviteCode;
           const isVisible = visibleCode === l.id;
-          const isActive = Number(currentLigue)===Number(l.id);
+          const isActive = Number(current)===Number(l.id);
           return (
           <div key={l.id} className={`p-4 rounded-xl border flex justify-between items-center ${isActive ? 'bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-900' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
             <div className="flex-1 min-w-0">
@@ -89,4 +91,4 @@ const Ligues = ({ ligues, currentLigue, onSelect, onRefresh, user }) => {
   );
 };
 
-export default Ligues;
+export default Leagues;

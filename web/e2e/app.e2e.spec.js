@@ -41,8 +41,8 @@ test.describe('Babyfoot E2E', () => {
 
   test('stats affiche classement', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: /🏆 Stats/ }).click();
-    await expect(page.getByText('Classement')).toBeVisible();
+    await page.getByRole('button', { name: /Classement/ }).first().click();
+    await expect(page.getByText('Classement').first()).toBeVisible();
     await expect(page.getByText('pierre_j').first()).toBeVisible({ timeout: 3000 });
   });
 });
