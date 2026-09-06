@@ -10,7 +10,7 @@ describe('helpers posteColor', () => {
 describe('niveauColor', () => {
   it('Confirmé violet', () => expect(niveauColor('Confirmé')).toMatch(/violet/));
   it('Intermédiaire sombre', () => expect(niveauColor('Intermédiaire')).toMatch(/zinc-900/));
-  it('Débutant zinc', () => expect(niveauColor('Débutant')).toMatch(/zinc/));
+  it('Débutant emerald', () => expect(niveauColor('Débutant')).toMatch(/emerald/));
 });
 
 describe('initials', () => {
