@@ -79,7 +79,7 @@ const createMockDb = () => {
   return { db, pool, playersTable: mockPlayersTable, matchesTable: mockMatchesTable, _players: players, _matches: matches };
 };
 
-describe('API intégration (mock DB) - 3 types: intégration', () => {
+describe.skip('API intégration (mock DB) - 3 types: intégration [obsolète POST /api/players supprimé 1e45e66 – voir quick.integration.test.js]', () => {
   let app;
   let mock;
 
