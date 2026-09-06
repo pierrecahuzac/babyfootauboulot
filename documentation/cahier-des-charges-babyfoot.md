@@ -51,6 +51,8 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - [x] `0.7` Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)
 - [x] `0.8` 1v1 sans poste + tirage joueurs+postes aléatoire
 - [x] `0.8.1` RGPD suppression anonymisée (`Joueur supprimé`) + nav `Roadmap` (ex-Todo) + tests rapides (`quick.integration.test.js`)
+- [x] `0.8.2` Contexte ligue création match + sélecteur multi-ligues (`CreateMatch.jsx:91` bandeau `🏆 Ligue` + `App.jsx:195`)
+- [x] `0.8.3` Nettoyage UI pro (sans `demo@example.com`/`Token (dev)`/`En chantier`, `Tournament.jsx` `Disponible prochainement`, `landing` `AU BOULOT`)
 - [ ] `0.9` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
 - [ ] `0.10` Stats par poste
 - [ ] `0.11` Duos gagnants
