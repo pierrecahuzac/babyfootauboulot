@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { createAuthMiddleware } from '../middleware/auth.js';
+import { anonymizeMatchesForUser } from '../utils/anonymize.js';
 
 export default async function adminRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers }) {
   const getUsersTable = () => users || players;
@@ -38,9 +39,16 @@ export default async function adminRoutes(app, { db, pool, players, matches, use
     const id = Number(req.params.id);
     if (Number(req.user.id) === id) return reply.code(400).send({ error: 'ne peut pas se supprimer soi-même' });
     try {
+      // pseudo récupéré AVANT delete (l'ancien IN-subquery après DELETE ne retournait rien)
+      const { rows: target } = await pool.query(`SELECT id, pseudo FROM users WHERE id=$1`, [id]);
+      const pseudo = target[0]?.pseudo;
       await pool.query(`DELETE FROM ligue_members WHERE user_id=$1`, [id]);
+      if (pseudo) {
+        // RGPD : anonymise l'historique des matchs
+        try { await anonymizeMatchesForUser({ pool, db, matches }, id, pseudo); } catch {}
+        await pool.query(`DELETE FROM players WHERE pseudo=$1`, [pseudo]).catch(()=>{});
+      }
       await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
-      await pool.query(`DELETE FROM players WHERE pseudo IN (SELECT pseudo FROM users WHERE id=$1)`, [id]).catch(()=>{});
     } catch {
       try { await db.delete(getUsersTable()).where(eq(getUsersTable().id, id)); } catch {}
     }
