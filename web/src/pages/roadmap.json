@@ -2,55 +2,61 @@
   {
     "done": true,
     "label": "Auth email + ligues privées",
-    "version": "0.01",
+    "version": "0.1",
     "type": "feature"
   },
   {
     "done": true,
     "label": "Matchs 1v1 / 2v2 avec poste Attaque/Défense",
-    "version": "0.02",
+    "version": "0.2",
     "type": "feature"
   },
   {
     "done": true,
     "label": "Tirage aléatoire équipes",
-    "version": "0.03",
+    "version": "0.3",
     "type": "feature"
   },
   {
     "done": true,
     "label": "Stats classement + historique avec date",
-    "version": "0.04",
+    "version": "0.4",
     "type": "feature"
   },
   {
     "done": true,
     "label": "UI clair épuré + accès protégé + fix déconnexion",
-    "version": "0.05",
+    "version": "0.5",
     "type": "revision"
   },
   {
     "done": true,
     "label": "Match détail + bordure vainqueur",
-    "version": "0.06",
+    "version": "0.6",
     "type": "revision"
   },
   {
     "done": true,
     "label": "Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)",
-    "version": "0.07",
+    "version": "0.7",
     "type": "revision"
   },
   {
     "done": true,
     "label": "1v1 sans poste + tirage joueurs+postes aléatoire",
-    "version": "0.08",
+    "version": "0.8",
     "type": "fix"
+  },
+  {
+    "done": true,
+    "label": "RGPD suppression anonymisée (Joueur supprimé) + Roadmap (ex-Todo) + tests rapides",
+    "version": "0.8.1",
+    "type": "revision"
   },
   {
     "done": false,
     "label": "Système de tournoi — Solo, Duo, équipe choisie, équipe aléatoire",
-    "version": "0.09",
+    "version": "0.9",
     "type": "feature",
     "badge": "TODO"
   },

@@ -158,7 +158,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     allowedHeaders: ['Content-Type','Authorization','X-Ligue-Id','X-Requested-With'],
   });
 
-  await authRoutes(app, { db, pool, users, players });
+  await authRoutes(app, { db, pool, users, players, matches });
   await liguesRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await playersRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await matchesRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });

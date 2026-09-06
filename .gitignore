@@ -51,5 +51,8 @@ docker-compose.override.yml
 documentation/*
 !documentation/cahier-des-charges-babyfoot.md
 
+# Sessions (jamais push, local uniquement)
+sessions/
+
 # DB data (si volume local)
 pgdata/

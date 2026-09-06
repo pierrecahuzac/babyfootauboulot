@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import { createTestApp } from '../helpers/testDb.js';
 
-describe('API intégration DB réelle (babyfoot_test)', () => {
+describe.skip('API intégration DB réelle (babyfoot_test) [obsolète POST /api/players supprimé – voir quick.integration.test.js]', () => {
   let app;
   let clean;
   let close;

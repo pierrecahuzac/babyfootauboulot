@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm';
 import { hashPassword, verifyPassword, signToken, authFromRequest, hashToken, verifyToken } from '../utils/auth.js';
 import { isValidEmail, genVerificationToken, genResetToken } from '../utils/helpers.js';
 import { isBlocked, blockedReason } from '../utils/moderation.js';
+import { anonymizeMatchesForUser } from '../utils/anonymize.js';
 import { createAuthMiddleware, getRateKey, isRateLimited, recordLoginAttempt, getIpKey, isGenericRateLimited, recordGenericAttempt } from '../middleware/auth.js';
 
-export default async function authRoutes(app, { db, pool, users, players }) {
+export default async function authRoutes(app, { db, pool, users, players, matches }) {
   const getUsersTable = () => users || players;
   const { requireAuth } = createAuthMiddleware();
   const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 };
@@ -357,6 +358,8 @@ export default async function authRoutes(app, { db, pool, users, players }) {
       }
       await pool.query(`DELETE FROM ligue_members WHERE user_id=$1`, [userId]);
       try { await pool.query(`DELETE FROM players WHERE pseudo=$1`, [user.pseudo]); } catch {}
+      // RGPD : anonymise le pseudo dans l'historique des matchs avant de supprimer le user
+      try { await anonymizeMatchesForUser({ pool, db, matches }, userId, user.pseudo); } catch {}
       await pool.query(`DELETE FROM users WHERE id=$1`, [userId]);
     } catch (e) {
       try { await db.delete(target).where(eq(target.id, userId)); } catch {}

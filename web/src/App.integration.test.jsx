@@ -56,7 +56,7 @@ describe('App intégration', () => {
     expect(await screen.findByText('Créer ton compte')).toBeInTheDocument();
     fireEvent.click(screen.getByText(/Retour/));
     unmount();
-    // part 2 : connecté -> invité visible
+    // part 2 : connecté -> fonctionnalité invité supprimée (1e45e66)
     mockFetch.mockImplementation((url) => {
       if (url.includes('/api/players')) return Promise.resolve({ ok:true, json: async()=> mockPlayers });
       if (url.includes('/api/stats')) return Promise.resolve({ ok:true, json: async()=> mockStats });
@@ -66,8 +66,8 @@ describe('App intégration', () => {
     });
     render(<App />);
     await waitFor(()=> expect(screen.getAllByText('pierre_j').length).toBeGreaterThan(0));
-    fireEvent.click(screen.getByText(/Ajouter un joueur invité/));
-    expect(await screen.findByText('Ajouter un invité')).toBeInTheDocument();
+    expect(screen.queryByText(/Ajouter un joueur invité/)).not.toBeInTheDocument();
+    expect(screen.getByText('Joueurs inscrits')).toBeInTheDocument();
   });
 
   it('CreateMatch affiche équipes Bleue/Rouge et bouton random', async () => {
@@ -90,10 +90,9 @@ describe('App intégration', () => {
   it('Stats affiche classement et matchs', async () => {
     render(<App />);
     await waitFor(()=> expect(screen.getAllByText('pierre_j').length).toBeGreaterThan(0));
-    // bottom nav Stats - le dernier bouton Stats (nav)
-    const statsBtn = screen.getAllByText('Stats').pop();
-    fireEvent.click(statsBtn);
-    expect(await screen.findByText('Classement')).toBeInTheDocument();
+    // bottom nav Classement (ex-Stats, renommé en 684359c) — getAll car heading aussi "Classement"
+    const [navBtn] = screen.getAllByText('Classement');
+    fireEvent.click(navBtn);
     await waitFor(()=> expect(screen.getByText(/2V.*1D/)).toBeInTheDocument());
   });
 });
