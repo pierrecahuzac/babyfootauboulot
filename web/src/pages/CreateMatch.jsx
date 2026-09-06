@@ -2,7 +2,8 @@ import { useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
+const CreateMatch = ({ players, leagueId, ligueId, onDone, onBack }) => {
+  const effectiveLeagueId = leagueId ?? ligueId;
   const [format, setFormat] = useState('1v1');
   const [bleue1, setBleue1] = useState(''); const [bleue2, setBleue2] = useState('');
   const [rouge1, setRouge1] = useState(''); const [rouge2, setRouge2] = useState('');
@@ -57,10 +58,10 @@ const CreateMatch = ({ players, ligueId, onDone, onBack }) => {
     if (team_bleue.some(t=>!t.pseudo) || team_rouge.some(t=>!t.pseudo)) { setErr('Sélectionne tous les joueurs'); return; }
     const allPseudos = [...team_bleue, ...team_rouge].map(t=>t.pseudo);
     if (new Set(allPseudos).size !== allPseudos.length) { setErr('Un joueur ne peut pas être dans les deux équipes'); return; }
-    if (!ligueId) { setErr('Choisis une ligue d’abord (en haut)'); return; }
+    if (!effectiveLeagueId) { setErr('Choisis une ligue d’abord (en haut)'); return; }
     const res = await fetch(`${API}/api/matches`, {
-      method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(ligueId) }, credentials: 'include',
-      body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: ligueId })
+      method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(effectiveLeagueId) }, credentials: 'include',
+      body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: effectiveLeagueId })
     });
     if (!res.ok) { setErr((await res.json()).error); return; }
     onDone();

@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import { getToken, setToken, authFetch } from './utils/auth.js';
-import Accueil from './pages/Accueil.jsx';
+import Home from './pages/Home.jsx';
 import Register from './pages/Register.jsx';
 import Login from './pages/Login.jsx';
 import Forgot from './pages/Forgot.jsx';
 import Reset from './pages/Reset.jsx';
-import Ligues from './pages/Ligues.jsx';
-import Profil from './pages/Profil.jsx';
+import Leagues from './pages/Leagues.jsx';
+import Profile from './pages/Profile.jsx';
 
 import CreateMatch from './pages/CreateMatch.jsx';
-import Classement from './pages/Classement.jsx';
-import Matchs from './pages/Matchs.jsx';
+import Leaderboard from './pages/Leaderboard.jsx';
+import Results from './pages/Results.jsx';
 import MatchDetail from './pages/MatchDetail.jsx';
+import Tournament from './pages/Tournament.jsx';
 import Roadmap from './pages/Roadmap.jsx';
 import Admin from './pages/Admin.jsx';
 
@@ -23,15 +24,15 @@ const App = () => {
     if (p.get('reset')) return 'reset';
     const h = (window.location.hash || '').replace(/^#/, '');
     if (h === 'register' || h === 'inscription') return 'register';
-    return 'accueil';
+    return 'home';
   });
   const [players, setPlayers] = useState([]);
   const [stats, setStats] = useState(null);
   const [matches, setMatches] = useState([]);
   const [user, setUser] = useState(null);
-  const [ligues, setLigues] = useState([]);
-  const [currentLigue, setCurrentLigue] = useState(() => {
-    const v = localStorage.getItem('babyfoot_ligue_id');
+  const [leagues, setLeagues] = useState([]);
+  const [currentLeague, setCurrentLeague] = useState(() => {
+    const v = localStorage.getItem('babyfoot_league_id') || localStorage.getItem('babyfoot_ligue_id');
     return v ? Number(v) : null;
   });
   const [theme, setTheme] = useState(() => localStorage.getItem('babyfoot_theme') || 'dark');
@@ -58,8 +59,8 @@ const App = () => {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  const refresh = async (ligueId = currentLigue) => {
-    const q = ligueId ? `?ligue_id=${ligueId}` : '';
+  const refresh = async (leagueId = currentLeague) => {
+    const q = leagueId ? `?ligue_id=${leagueId}` : '';
     const [p, s] = await Promise.all([
       authFetch(`/api/players${q}`).then(r => r.json()).catch(()=>[]),
       authFetch(`/api/stats${q}`).then(r => r.json()).catch(()=>({ classement: [], matches: [] })),
@@ -77,16 +78,17 @@ const App = () => {
     } catch { setUser(null); }
   };
 
-  const loadLigues = async () => {
-    if (!getToken()) { setLigues([]); return; }
+  const loadLeagues = async () => {
+    if (!getToken()) { setLeagues([]); return; }
     try {
       const r = await authFetch('/api/ligues');
       if (r.ok) {
         const data = await r.json();
-        setLigues(data);
-        if (data.length && !currentLigue) {
+        setLeagues(data);
+        if (data.length && !currentLeague) {
           const first = data[0].id;
-          setCurrentLigue(first);
+          setCurrentLeague(first);
+          localStorage.setItem('babyfoot_league_id', String(first));
           localStorage.setItem('babyfoot_ligue_id', String(first));
         }
       }
@@ -94,43 +96,45 @@ const App = () => {
   };
 
   useEffect(() => { refresh(); loadMe(); }, []);
-  useEffect(() => { if (user) loadLigues(); }, [user]);
+  useEffect(() => { if (user) loadLeagues(); }, [user]);
   useEffect(() => {
-    if (currentLigue) {
-      localStorage.setItem('babyfoot_ligue_id', String(currentLigue));
-      refresh(currentLigue);
+    if (currentLeague) {
+      localStorage.setItem('babyfoot_league_id', String(currentLeague));
+      localStorage.setItem('babyfoot_ligue_id', String(currentLeague));
+      refresh(currentLeague);
     } else {
       refresh(null);
     }
-  }, [currentLigue]);
+  }, [currentLeague]);
 
   const logout = async () => {
     await authFetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
     setToken(null);
     setUser(null);
-    setLigues([]);
-    setCurrentLigue(null);
+    setLeagues([]);
+    setCurrentLeague(null);
+    localStorage.removeItem('babyfoot_league_id');
     localStorage.removeItem('babyfoot_ligue_id');
-    setView('accueil');
+    setView('home');
   };
 
   const onAuth = async (data) => {
     setToken(data.token);
     setUser(data.user);
-    await loadLigues();
-    setView('ligues');
+    await loadLeagues();
+    setView('leagues');
   };
 
-  const selectLigue = (id) => {
-    setCurrentLigue(Number(id));
-    setView('accueil');
+  const selectLeague = (id) => {
+    setCurrentLeague(Number(id));
+    setView('home');
   };
 
-  const handleLigueChange = (id) => {
-    setCurrentLigue(Number(id));
+  const handleLeagueChange = (id) => {
+    setCurrentLeague(Number(id));
   };
 
-  const protectedViews = new Set(['match','classement','matchs','ligues','profil','admin','inscription','matchDetail']);
+  const protectedViews = new Set(['createMatch','leaderboard','results','leagues','profile','admin','matchDetail']);
   const safeSetView = (v) => {
     if (protectedViews.has(v) && !user) { setView('login'); return; }
     setView(v);
@@ -141,7 +145,7 @@ const App = () => {
     <div className={`min-h-screen bg-zinc-50 dark:bg-zinc-950 ${theme==='dark' ? 'dark' : ''}`}>
       <div className="max-w-md mx-auto min-h-screen bg-white dark:bg-zinc-900 flex flex-col relative dark:text-zinc-100 border-x border-zinc-200 dark:border-zinc-800">
         <header className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-4 sm:px-5 py-4 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => safeSetView('accueil')}>
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => safeSetView('home')}>
             <span className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center text-sm">⚽</span>
             <div>
               <h1 className="font-semibold text-[15px] tracking-tight leading-none">BABYFOOT</h1>
@@ -153,7 +157,7 @@ const App = () => {
             {user ? (
               <>
                 <button
-                  onClick={() => safeSetView(user.role === 'admin' ? 'admin' : 'profil')}
+                  onClick={() => safeSetView(user.role === 'admin' ? 'admin' : 'profile')}
                   title={user.role === 'admin' ? 'Admin' : 'Profil'}
                   className={`text-xs px-2.5 py-1 rounded-full font-semibold border inline-flex items-center gap-1 ${user.role === 'admin' ? 'bg-red-500 text-white border-red-600 hover:bg-red-600' : 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600'}`}
                 >
@@ -178,28 +182,30 @@ const App = () => {
         )}
 
         <main className="p-4 sm:p-5 flex-1 pb-36 bg-white dark:bg-zinc-900">
-          {view === 'accueil' && <Accueil players={players} onNav={safeSetView} user={user} ligue={ligues.find(l=>l.id===currentLigue)} onLigues={()=>safeSetView('ligues')} onRoadmap={()=>setView('roadmap')} />}
+          {view === 'home' && <Home players={players} onNav={safeSetView} user={user} league={leagues.find(l=>l.id===currentLeague)} onLeagues={()=>safeSetView('leagues')} onRoadmap={()=>safeSetView('roadmap')} />}
           {view === 'inscription' && (user ? <div className="p-6 bg-violet-50 border border-violet-200 rounded-lg"><h2 className="font-bold text-violet-600 mb-4">Fonctionnalité supprimée</h2><p className="text-zinc-600">La création de joueurs invités a été supprimée.</p></div> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour ajouter un invité</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('login')} />}
-          {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('accueil')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
+          {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('home')} onSwitch={() => setView('login')} />}
+          {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('home')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
           {view === 'forgot' && <Forgot onBack={()=>setView('login')} onReset={(t)=>{ if(t) setPendingResetToken(t); setView('reset'); }} />}
           {view === 'reset' && <Reset initialToken={pendingResetToken} onBack={()=>setView('login')} onDone={()=>{ setPendingResetToken(''); setView('login'); }} />}
-          {view === 'profil' && (user ? <Profil user={user} ligues={ligues} onUpdate={(u)=>setUser(u)} onLogout={logout} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir ton profil</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'ligues' && (user ? <Ligues ligues={ligues} currentLigue={currentLigue} onSelect={selectLigue} onRefresh={loadLigues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'match' && (user ? <CreateMatch players={players} ligueId={currentLigue} onDone={() => { refresh(); safeSetView('classement'); }} onBack={() => safeSetView('accueil')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-{view === 'classement' && (user ? <Classement classement={stats} ligues={ligues} currentLigue={currentLigue} onSelectLigue={selectLigue} onHandleLigueChange={handleLigueChange} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-           {view === 'matchs' && (user ? <Matchs matches={matches} onSelect={openMatch} ligues={ligues} currentLigue={currentLigue} onSelectLigue={selectLigue} onHandleLigueChange={handleLigueChange} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} ligue={ligues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId))} onBack={()=>safeSetView('matchs')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'profile' && (user ? <Profile user={user} leagues={leagues} onUpdate={(u)=>setUser(u)} onLogout={logout} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir ton profil</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('home')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'leagues' && (user ? <Leagues leagues={leagues} currentLeague={currentLeague} onSelect={selectLeague} onRefresh={loadLeagues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'createMatch' && (user ? <CreateMatch players={players} leagueId={currentLeague} onDone={() => { refresh(); safeSetView('leaderboard'); }} onBack={() => safeSetView('home')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'leaderboard' && (user ? <Leaderboard leaderboard={stats} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'results' && (user ? <Results matches={matches} onSelect={openMatch} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} onLeagues={()=>safeSetView('leagues')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} league={leagues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId ?? selectedMatch?.league_id))} onBack={()=>safeSetView('results')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'tournament' && <Tournament onBack={()=>safeSetView('home')} />}
           {view === 'roadmap' && <Roadmap />}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex">
           {[
-            { id: 'accueil', label: 'Accueil', icon: '🏠' },
-            { id: 'match', label: 'Match', icon: '⚔️' },
-            { id: 'classement', label: 'Classement', icon: '🏆' },
-            { id: 'matchs', label: 'Matchs', icon: '⚽' },
+            { id: 'home', label: 'Accueil', icon: '🏠' },
+            { id: 'createMatch', label: 'Match', icon: '⚔️' },
+            { id: 'results', label: 'Résultats', icon: '📊' },
+            { id: 'leaderboard', label: 'Classement', icon: '🏆' },
+            { id: 'tournament', label: 'Tournoi', icon: '🏅' },
             { id: 'roadmap', label: 'Roadmap', icon: '📋' },
           ].map(tab => (
             <button

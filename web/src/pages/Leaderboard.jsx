@@ -1,12 +1,16 @@
-const Classement = ({ classement, ligues, currentLigue, onSelectLigue, onHandleLigueChange }) => {
-  if (!classement) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Chargement du classement…</p>;
+const Leaderboard = ({ leaderboard, classement, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange }) => {
+  const data = leaderboard ?? classement;
+  const leaguesData = leagues ?? ligues ?? [];
+  const current = currentLeague ?? currentLigue;
+  const handleChange = onHandleLeagueChange ?? onHandleLigueChange ?? onSelectLeague ?? onSelectLigue;
+  if (!data) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Chargement du classement…</p>;
  
   return (
     <div className="space-y-6">
       <div className="mb-3">
-        <select value={currentLigue || ''} onChange={(e)=>onHandleLigueChange(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
+        <select value={current || ''} onChange={(e)=>handleChange(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300">
           <option value="">— Ligue —</option>
-          {ligues.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
+          {leaguesData.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
       </div>
       <div>
@@ -14,8 +18,8 @@ const Classement = ({ classement, ligues, currentLigue, onSelectLigue, onHandleL
           <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">🏆</span> Classement
         </h2>
         <div className="border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-700 bg-white dark:bg-zinc-800 mt-3">
-          {classement.length===0 && <p className="p-8 text-sm text-zinc-500 text-center">Pas encore de matchs — lance le premier !</p>}
-          {classement.map((p,i)=>{
+          {data.length===0 && <p className="p-8 text-sm text-zinc-500 text-center">Pas encore de matchs — lance le premier !</p>}
+          {data.map((p,i)=>{
             const isTop = i < 3;
             const medal = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : `#${i+1}`;
             return (
@@ -35,4 +39,4 @@ const Classement = ({ classement, ligues, currentLigue, onSelectLigue, onHandleL
   );
 };
 
-export default Classement;
+export default Leaderboard;

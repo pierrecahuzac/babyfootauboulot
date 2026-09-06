@@ -1,4 +1,5 @@
-const MatchDetail = ({ match, onBack, ligue }) => {
+const MatchDetail = ({ match, onBack, ligue, league }) => {
+  const currentLeague = league ?? ligue;
   if (!match) return <p className="text-sm text-zinc-500">Match introuvable</p>;
   const bleue = match.team_bleue ?? match.team_a ?? [];
   const rouge = match.team_rouge ?? match.team_b ?? [];
@@ -23,7 +24,7 @@ const MatchDetail = ({ match, onBack, ligue }) => {
             <p className="text-xs font-semibold tracking-wide uppercase text-zinc-500">Match #{match.id}</p>
             <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 mt-1">{formatLabel}</h2>
             <p className="text-xs text-zinc-500 mt-1">{[formatLabel, dateStr].filter(Boolean).join(' · ')}</p>
-            {ligue && <p className="text-xs text-zinc-500 mt-1">Ligue : <span className="font-medium text-zinc-700 dark:text-zinc-300">{ligue.name}</span></p>}
+            {currentLeague && <p className="text-xs text-zinc-500 mt-1">Ligue : <span className="font-medium text-zinc-700 dark:text-zinc-300">{currentLeague.name}</span></p>}
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${isDraw ? 'bg-zinc-100 text-zinc-700 border-zinc-200' : winBleue ? 'bg-sky-500 text-white border-sky-500' : 'bg-rose-500 text-white border-rose-500'}`}>{winnerText}</span>
         </div>
