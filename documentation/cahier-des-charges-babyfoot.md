@@ -53,6 +53,7 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - [x] `0.8.1` RGPD suppression anonymisée (`Joueur supprimé`) + nav `Roadmap` (ex-Todo) + tests rapides (`quick.integration.test.js`)
 - [x] `0.8.2` Contexte ligue création match + sélecteur multi-ligues (`CreateMatch.jsx:91` bandeau `🏆 Ligue` + `App.jsx:195`)
 - [x] `0.8.3` Nettoyage UI pro (sans `demo@example.com`/`Token (dev)`/`En chantier`, `Tournament.jsx` `Disponible prochainement`, `landing` `AU BOULOT`)
+- [x] `0.8.4` Fiche joueur (clic `Home`/`Leaderboard` → `PlayerDetail.jsx` `V/D/ratio` + `10 matchs` + `← Retour`, sans `email/mdp`)
 - [ ] `0.9` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
 - [ ] `0.10` Stats par poste
 - [ ] `0.11` Duos gagnants

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { posteColor, niveauColor, initials, avatarBg } from '../utils/helpers.js';
 
-const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap, onFeedback }) => {
+const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap, onFeedback, onPlayerSelect }) => {
   const currentLeague = league ?? ligue;
   const handleLeagues = onLeagues ?? onLigues;
   const [showCode, setShowCode] = useState(false);
@@ -111,8 +111,8 @@ const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoad
               </div>
             )}
             {filteredPlayers.map(p => (
-              <div key={p.id} className="p-3.5 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-sm">
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${avatarBg(p.pseudo)} text-white flex items-center justify-center font-semibold text-xs`}>
+              <button key={p.id} onClick={() => onPlayerSelect?.(p)} className="w-full p-3.5 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-sm text-left transition">
+                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${avatarBg(p.pseudo)} text-white flex items-center justify-center font-semibold text-xs shrink-0`}>
                   {initials(p.pseudo)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -130,7 +130,7 @@ const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoad
                   </div>
                 </div>
                 <span className="text-zinc-300 dark:text-zinc-600">›</span>
-              </div>
+              </button>
             ))}
           </div>
           <div className="h-10" />

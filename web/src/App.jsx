@@ -12,6 +12,7 @@ import CreateMatch from './pages/CreateMatch.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
 import Results from './pages/Results.jsx';
 import MatchDetail from './pages/MatchDetail.jsx';
+import PlayerDetail from './pages/PlayerDetail.jsx';
 import Tournament from './pages/Tournament.jsx';
 import Roadmap from './pages/Roadmap.jsx';
 import Admin from './pages/Admin.jsx';
@@ -44,6 +45,7 @@ const App = () => {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
   const [pendingResetToken, setPendingResetToken] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // nettoie les tokens dans l'URL (anti Referer/history leak R7) + gère #register/#inscription depuis landing
   useEffect(() => {
@@ -135,12 +137,13 @@ const App = () => {
     setCurrentLeague(Number(id));
   };
 
-  const protectedViews = new Set(['createMatch','leaderboard','results','leagues','profile','admin','matchDetail','feedback']);
+  const protectedViews = new Set(['createMatch','leaderboard','results','leagues','profile','admin','matchDetail','playerDetail','feedback']);
   const safeSetView = (v) => {
     if (protectedViews.has(v) && !user) { setView('login'); return; }
     setView(v);
   };
   const openMatch = (m) => { setSelectedMatch(m); safeSetView('matchDetail'); };
+  const openPlayer = (p) => { setSelectedPlayer(p); safeSetView('playerDetail'); };
 
   return (
     <div className={`min-h-screen bg-zinc-50 dark:bg-zinc-950 ${theme==='dark' ? 'dark' : ''}`}>
@@ -183,7 +186,7 @@ const App = () => {
         )}
 
         <main className="p-4 sm:p-5 flex-1 pb-36 bg-white dark:bg-zinc-900">
-          {view === 'home' && <Home players={players} onNav={safeSetView} user={user} league={leagues.find(l=>l.id===currentLeague)} onLeagues={()=>safeSetView('leagues')} onRoadmap={()=>safeSetView('roadmap')} onFeedback={()=>safeSetView('feedback')} />}
+          {view === 'home' && <Home players={players} onNav={safeSetView} user={user} league={leagues.find(l=>l.id===currentLeague)} onLeagues={()=>safeSetView('leagues')} onRoadmap={()=>safeSetView('roadmap')} onFeedback={()=>safeSetView('feedback')} onPlayerSelect={openPlayer} />}
           {view === 'inscription' && (user ? <div className="p-6 bg-zinc-50 border border-zinc-200 rounded-xl text-center"><h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Fonctionnalité indisponible</h2><p className="text-sm text-zinc-500 mt-1">La création d'invités n'est plus disponible.</p></div> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour continuer</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('home')} onSwitch={() => setView('login')} />}
           {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('home')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
@@ -193,9 +196,10 @@ const App = () => {
           {view === 'admin' && (user && user.role==='admin' ? <Admin user={user} onBack={()=>safeSetView('home')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Accès admin requis — connecte-toi</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'leagues' && (user ? <Leagues leagues={leagues} currentLeague={currentLeague} onSelect={selectLeague} onRefresh={loadLeagues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'createMatch' && (user ? <CreateMatch players={players} leagueId={currentLeague} leagues={leagues} league={leagues.find(l=>l.id===currentLeague)} onLeagueChange={handleLeagueChange} onLeagues={()=>safeSetView('leagues')} onDone={() => { refresh(); safeSetView('leaderboard'); }} onBack={() => safeSetView('home')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'leaderboard' && (user ? <Leaderboard leaderboard={stats} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'leaderboard' && (user ? <Leaderboard leaderboard={stats} players={players} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} onPlayerSelect={openPlayer} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'results' && (user ? <Results matches={matches} onSelect={openMatch} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} onLeagues={()=>safeSetView('leagues')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} league={leagues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId ?? selectedMatch?.league_id))} onBack={()=>safeSetView('results')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'playerDetail' && (user ? <PlayerDetail player={selectedPlayer} stats={stats} matches={matches} league={leagues.find(l=>l.id===currentLeague)} onBack={()=>safeSetView('home')} onSelectMatch={openMatch} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le joueur</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'tournament' && <Tournament onBack={()=>safeSetView('home')} />}
           {view === 'roadmap' && <Roadmap />}
           {view === 'feedback' && (user ? <Feedback user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour envoyer un feedback</p><p className="text-xs text-zinc-500 mt-1">Bug, idée ou suggestion — directement dans l'app.</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
