@@ -1,16 +1,9 @@
 import { createAuthMiddleware } from '../middleware/auth.js';
 
-// Dev-only : désactivé en production (NODE_ENV=production -> 404)
+// Feedback : activé en prod pour users connectés (auth requis)
 // Permet aux users de reporter bugs/idées directement dans l'app sans mail.
 export default async function feedbackRoutes(app, { pool }) {
   const { requireAuth, requireAdmin, isAdmin } = createAuthMiddleware();
-
-  const isProd = () => process.env.NODE_ENV === 'production' || process.env.FEEDBACK_DISABLED === '1';
-  const guardProd = async (req, reply) => {
-    if (isProd()) {
-      return reply.code(404).send({ error: 'feedback désactivé en production' });
-    }
-  };
 
   const TYPES = new Set(['bug', 'idee', 'amelioration', 'autre']);
   const STATUSES = new Set(['open', 'done', 'wontfix']);
@@ -34,7 +27,7 @@ export default async function feedbackRoutes(app, { pool }) {
   ensureTable().catch(() => {});
 
   // POST /api/feedbacks — créer un feedback (auth requis)
-  app.post('/api/feedbacks', { preHandler: requireAuth, onRequest: guardProd }, async (req, reply) => {
+  app.post('/api/feedbacks', { preHandler: requireAuth }, async (req, reply) => {
     await ensureTable();
     const { type, message } = req.body || {};
     const t = (type || '').trim().toLowerCase();
@@ -52,7 +45,7 @@ export default async function feedbackRoutes(app, { pool }) {
   });
 
   // GET /api/feedbacks — liste : admin voit tout, user voit ses propres
-  app.get('/api/feedbacks', { preHandler: requireAuth, onRequest: guardProd }, async (req, reply) => {
+  app.get('/api/feedbacks', { preHandler: requireAuth }, async (req, reply) => {
     await ensureTable();
     const admin = isAdmin(req.user);
     if (admin) {
@@ -64,7 +57,7 @@ export default async function feedbackRoutes(app, { pool }) {
   });
 
   // PATCH /api/feedbacks/:id — admin peut changer status
-  app.patch('/api/feedbacks/:id', { preHandler: requireAdmin, onRequest: guardProd }, async (req, reply) => {
+  app.patch('/api/feedbacks/:id', { preHandler: requireAdmin }, async (req, reply) => {
     await ensureTable();
     const id = Number(req.params.id);
     const { status } = req.body || {};
@@ -75,7 +68,7 @@ export default async function feedbackRoutes(app, { pool }) {
   });
 
   // DELETE /api/feedbacks/:id — owner ou admin
-  app.delete('/api/feedbacks/:id', { preHandler: requireAuth, onRequest: guardProd }, async (req, reply) => {
+  app.delete('/api/feedbacks/:id', { preHandler: requireAuth }, async (req, reply) => {
     await ensureTable();
     const id = Number(req.params.id);
     const { rows } = await pool.query(`SELECT id, user_id FROM feedbacks WHERE id=$1`, [id]);
