@@ -28,19 +28,19 @@ const BracketCard = ({ date, teamA, teamB, scoreA, scoreB }) => {
 const Tournament = ({ onBack }) => {
   return (
     <div className="space-y-4">
-      <div className="bg-amber-50 dark:bg-amber-950/20 border-2 border-dashed border-amber-300 dark:border-amber-800 rounded-xl p-6 text-center">
-        <div className="w-14 h-14 rounded-xl bg-amber-400 text-white flex items-center justify-center text-2xl mx-auto">🚧</div>
-        <h2 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 mt-3">Tournoi — En chantier</h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">On construit le mode tournoi. Bientôt disponible !</p>
-        <div className="mt-4 flex justify-center">
-          <span className="text-xs font-mono bg-zinc-900 dark:bg-zinc-700 text-white px-3 py-1 rounded-full">v0.9 • En développement</span>
+      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-6 text-center">
+        <div className="w-12 h-12 rounded-xl bg-violet-600 text-white flex items-center justify-center text-xl mx-auto">🏆</div>
+        <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 mt-3">Tournoi</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Le mode tournoi arrive prochainement — prépare tes compétitions entre collègues.</p>
+        <div className="mt-3 flex justify-center">
+          <span className="text-xs font-medium bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 px-3 py-1 rounded-full">Disponible prochainement</span>
         </div>
       </div>
 
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
         <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">👁️</span>
-          Aperçu — inspiration coupe
+          Aperçu — format coupe
         </h3>
 
         <div className="mt-4 flex gap-3 items-center">
@@ -85,7 +85,7 @@ const Tournament = ({ onBack }) => {
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-5">
         <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">🏅</span>
-          À venir
+          Au programme
         </h3>
         <ul className="mt-3 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
           <li className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs">○</span> Solo / Duo — choisis ton format</li>
@@ -93,10 +93,6 @@ const Tournament = ({ onBack }) => {
           <li className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs">○</span> Arbre à élimination + planning des matchs</li>
           <li className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs">○</span> Suivi en temps réel dans ta ligue</li>
         </ul>
-        <div className="mt-4 h-2 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
-          <div className="h-full w-[35%] bg-amber-400 rounded-full" />
-        </div>
-        <p className="text-xs text-zinc-500 mt-2 text-center">35% — maquettes prêtes, dev en cours</p>
       </div>
 
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 flex gap-2">
@@ -104,7 +100,7 @@ const Tournament = ({ onBack }) => {
         <button onClick={() => (window.location.hash = '#roadmap')} className="flex-1 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl font-medium text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700">Voir la roadmap</button>
       </div>
 
-      <p className="text-xs text-zinc-500 text-center">Une idée pour le tournoi ? Parles-en à l'équipe — on écoute !</p>
+      <p className="text-xs text-zinc-500 text-center">Une suggestion pour le mode tournoi ? Partage-la via Feedback.</p>
     </div>
   );
 };

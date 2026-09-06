@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { posteColor, niveauColor, initials, avatarBg } from '../utils/helpers.js';
 
 const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap, onFeedback }) => {
-  const isDev = import.meta.env.DEV;
   const currentLeague = league ?? ligue;
   const handleLeagues = onLeagues ?? onLigues;
   const [showCode, setShowCode] = useState(false);
@@ -65,7 +64,6 @@ const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoad
         <div className="bg-white border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl p-5 text-center">
           <h2 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">Prêt à jouer ?</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Connecte-toi pour créer un match ou une ligue.</p>
-          <p className="text-xs text-zinc-500 mt-2">Compte de test : <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">demo@example.com / demo1234</span></p>
           <button onClick={() => onNav('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-violet-700">Connexion</button>
         </div>
       )}
@@ -75,8 +73,8 @@ const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoad
       )}
 
       <button onClick={() => (onRoadmap ? onRoadmap() : onNav('roadmap'))} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">📋 Voir la roadmap</button>
-      {isDev && user && (
-        <button onClick={() => (onFeedback ? onFeedback() : onNav('feedback'))} className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">💬 Feedback — bug / idée</button>
+      {user && (
+        <button onClick={() => (onFeedback ? onFeedback() : onNav('feedback'))} className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">💬 Donner mon avis</button>
       )}
 
       {!user ? (

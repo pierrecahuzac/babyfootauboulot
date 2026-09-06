@@ -33,7 +33,7 @@ const Admin = ({ user, onBack }) => {
     setMsg(`Supprimé ${pseudo}`);
     load();
   };
-  if (user?.role!=='admin') return <div className="p-8 text-center"><p className="font-black dark:text-zinc-100">🔒 Admin requis</p><p className="text-sm text-zinc-500 dark:text-zinc-400">Connecte-toi avec admin@example.com</p><button onClick={onBack} className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">← Retour</button></div>;
+  if (user?.role!=='admin') return <div className="p-8 text-center"><p className="font-black dark:text-zinc-100">🔒 Accès restreint</p><p className="text-sm text-zinc-500 dark:text-zinc-400">Connecte-toi avec un compte administrateur.</p><button onClick={onBack} className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">← Retour</button></div>;
   const sorted = [...users].sort((a,b)=> (b.role==='admin') - (a.role==='admin'));
   const filtered = sorted.filter(u => !filter || u.pseudo.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
   const flagged = users.filter(u => isBlocked(u.pseudo));

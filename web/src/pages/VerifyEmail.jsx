@@ -25,7 +25,7 @@ const VerifyEmail = ({ user, onBack, onVerified }) => {
     const r = await fetch(`${API}/api/auth/resend-verification`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ email: email || user?.email }) });
     const b = await r.json();
     if (!r.ok) { setErr(b.error); return; }
-    setOk(b.verificationToken ? `Nouveau token (dev): ${b.verificationToken.slice(0,12)}…` : b.message);
+    setOk(b.message || 'Email de vérification renvoyé.');
     if (b.verificationToken) setToken(b.verificationToken);
   };
   return (
