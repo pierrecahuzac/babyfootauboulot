@@ -17,7 +17,6 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
     const res = await fetch(`${API}/api/auth/register`, { method: 'POST', headers: { 'Content-Type':'application/json' }, credentials: 'include', body: JSON.stringify({ email, pseudo, password, poste, niveau }) });
     const body = await res.json();
     if (!res.ok) { setErr(body.error); return; }
-    if (body.verificationToken) setInfo(`Compte créé ! Token vérif (dev): ${body.verificationToken.slice(0,12)}… — check /verify`);
     onAuth(body);
   };
 

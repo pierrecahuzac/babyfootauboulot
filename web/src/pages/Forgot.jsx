@@ -15,8 +15,8 @@ const Forgot = ({ onBack, onReset }) => {
     if (!r.ok) { setErr(b.error); return; }
     if (b.resetToken) {
       setToken(b.resetToken);
-      setOk(`Token (dev): ${b.resetToken.slice(0,12)}… — copie-le pour reset`);
-    } else setOk(b.message || 'Si ce compte existe, un email a été envoyé');
+      setOk('Lien de réinitialisation généré — poursuis ci-dessous.');
+    } else setOk(b.message || 'Si ce compte existe, un email a été envoyé.');
   };
   return (
     <form onSubmit={submit} className="space-y-4">
