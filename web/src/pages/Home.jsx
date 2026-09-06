@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { posteColor, niveauColor, initials, avatarBg } from '../utils/helpers.js';
 
-const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap }) => {
+const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap, onFeedback }) => {
+  const isDev = import.meta.env.DEV;
   const currentLeague = league ?? ligue;
   const handleLeagues = onLeagues ?? onLigues;
   const [showCode, setShowCode] = useState(false);
@@ -74,6 +75,9 @@ const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoad
       )}
 
       <button onClick={() => (onRoadmap ? onRoadmap() : onNav('roadmap'))} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">📋 Voir la roadmap</button>
+      {isDev && user && (
+        <button onClick={() => (onFeedback ? onFeedback() : onNav('feedback'))} className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">💬 Feedback — bug / idée</button>
+      )}
 
       {!user ? (
         <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50">

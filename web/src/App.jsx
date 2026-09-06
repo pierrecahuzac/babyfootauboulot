@@ -15,8 +15,10 @@ import MatchDetail from './pages/MatchDetail.jsx';
 import Tournament from './pages/Tournament.jsx';
 import Roadmap from './pages/Roadmap.jsx';
 import Admin from './pages/Admin.jsx';
+import Feedback from './pages/Feedback.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
+const isDev = import.meta.env.DEV; // dev-only : feedback masqué en prod (VITE build prod -> false)
 
 const App = () => {
   const [view, setView] = useState(() => {
@@ -134,7 +136,7 @@ const App = () => {
     setCurrentLeague(Number(id));
   };
 
-  const protectedViews = new Set(['createMatch','leaderboard','results','leagues','profile','admin','matchDetail']);
+  const protectedViews = new Set(['createMatch','leaderboard','results','leagues','profile','admin','matchDetail','feedback']);
   const safeSetView = (v) => {
     if (protectedViews.has(v) && !user) { setView('login'); return; }
     setView(v);
@@ -182,7 +184,7 @@ const App = () => {
         )}
 
         <main className="p-4 sm:p-5 flex-1 pb-36 bg-white dark:bg-zinc-900">
-          {view === 'home' && <Home players={players} onNav={safeSetView} user={user} league={leagues.find(l=>l.id===currentLeague)} onLeagues={()=>safeSetView('leagues')} onRoadmap={()=>safeSetView('roadmap')} />}
+          {view === 'home' && <Home players={players} onNav={safeSetView} user={user} league={leagues.find(l=>l.id===currentLeague)} onLeagues={()=>safeSetView('leagues')} onRoadmap={()=>safeSetView('roadmap')} onFeedback={()=>safeSetView('feedback')} />}
           {view === 'inscription' && (user ? <div className="p-6 bg-violet-50 border border-violet-200 rounded-lg"><h2 className="font-bold text-violet-600 mb-4">Fonctionnalité supprimée</h2><p className="text-zinc-600">La création de joueurs invités a été supprimée.</p></div> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour ajouter un invité</p><p className="text-xs text-zinc-500 mt-1">Compte de test : <span className="font-mono">demo@example.com / demo1234</span></p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'register' && <Register onAuth={onAuth} onBack={() => safeSetView('home')} onSwitch={() => setView('login')} />}
           {view === 'login' && <Login onAuth={onAuth} onBack={() => safeSetView('home')} onSwitch={() => setView('register')} onForgot={()=>setView('forgot')} />}
@@ -197,6 +199,7 @@ const App = () => {
           {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} league={leagues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId ?? selectedMatch?.league_id))} onBack={()=>safeSetView('results')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'tournament' && <Tournament onBack={()=>safeSetView('home')} />}
           {view === 'roadmap' && <Roadmap />}
+          {view === 'feedback' && (isDev ? <Feedback user={user} /> : <div className="p-8 text-center"><p className="text-sm text-zinc-500">Feedback désactivé en production</p></div>)}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex">
@@ -207,6 +210,7 @@ const App = () => {
             { id: 'leaderboard', label: 'Classement', icon: '🏆' },
             { id: 'tournament', label: 'Tournoi', icon: '🏅' },
             { id: 'roadmap', label: 'Roadmap', icon: '📋' },
+            ...(isDev ? [{ id: 'feedback', label: 'Feedback', icon: '💬' }] : []),
           ].map(tab => (
             <button
               key={tab.id}

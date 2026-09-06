@@ -8,6 +8,7 @@ import liguesRoutes from './routes/ligues.js';
 import playersRoutes from './routes/players.js';
 import matchesRoutes from './routes/matches.js';
 import adminRoutes from './routes/admin.js';
+import feedbackRoutes from './routes/feedback.js';
 
 const slugify = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) || 'ligue';
 const genInvite = () => crypto.randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
@@ -110,6 +111,20 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     await pool.query(`UPDATE matches SET team_b = team_rouge WHERE team_b IS NULL AND team_rouge IS NOT NULL`);
     await pool.query(`UPDATE matches SET score_a = score_bleue WHERE score_a IS NULL AND score_bleue IS NOT NULL`);
     await pool.query(`UPDATE matches SET score_b = score_rouge WHERE score_b IS NULL AND score_rouge IS NOT NULL`);
+    // feedbacks — dev-only (désactivé en prod côté route, mais table créée partout pour migrations)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedbacks (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE SET NULL,
+        pseudo TEXT NOT NULL,
+        email TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('bug','idee','amelioration','autre')),
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','done','wontfix')),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `).catch(()=>{});
+
     const hasLigue = await pool.query(`SELECT id FROM ligues LIMIT 1`).then(r=>r.rows[0]).catch(()=>null);
     if (!hasLigue) {
       try {
@@ -163,6 +178,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
   await playersRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await matchesRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await adminRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
+  await feedbackRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
 
   app.get('/health', async () => ({ ok: true }));
 
