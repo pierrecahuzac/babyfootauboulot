@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../utils/auth.js';
 
-// Page Feedback — dev-only (masquée en prod via import.meta.env.PROD)
+// Page Feedback — prod activé pour users connectés
 // Permet de reporter bug / idée / amélioration directement dans l'app (pas de mail)
 const TYPE_LABELS = {
   bug: '🐛 Bug',

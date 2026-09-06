@@ -18,7 +18,6 @@ import Admin from './pages/Admin.jsx';
 import Feedback from './pages/Feedback.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
-const isDev = import.meta.env.DEV; // dev-only : feedback masqué en prod (VITE build prod -> false)
 
 const App = () => {
   const [view, setView] = useState(() => {
@@ -199,7 +198,7 @@ const App = () => {
           {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} league={leagues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId ?? selectedMatch?.league_id))} onBack={()=>safeSetView('results')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'tournament' && <Tournament onBack={()=>safeSetView('home')} />}
           {view === 'roadmap' && <Roadmap />}
-          {view === 'feedback' && (isDev ? <Feedback user={user} /> : <div className="p-8 text-center"><p className="text-sm text-zinc-500">Feedback désactivé en production</p></div>)}
+          {view === 'feedback' && (user ? <Feedback user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour envoyer un feedback</p><p className="text-xs text-zinc-500 mt-1">Bug, idée ou suggestion — directement dans l'app.</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
         </main>
 
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex">
@@ -210,7 +209,7 @@ const App = () => {
             { id: 'leaderboard', label: 'Classement', icon: '🏆' },
             { id: 'tournament', label: 'Tournoi', icon: '🏅' },
             { id: 'roadmap', label: 'Roadmap', icon: '📋' },
-            ...(isDev ? [{ id: 'feedback', label: 'Feedback', icon: '💬' }] : []),
+            { id: 'feedback', label: 'Feedback', icon: '💬' },
           ].map(tab => (
             <button
               key={tab.id}
