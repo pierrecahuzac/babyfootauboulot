@@ -41,17 +41,17 @@ App mobile-first pour organiser les parties de babyfoot entre collègues *et* ou
 - `GET /api/stats` → `calculateClassement(players,matches)` (`api/src/utils/stats.js`) : `victoires/défaites/ratio`, tri `victoires puis ratio`, `normalizeMatch` gère legacy `teamA/team_a`
 - Front `Stats` : podium `🥇🥈🥉` + `Derniers matchs` `Bleue ⚡/🛡️ vs Rouge` + score, filtré par ligue si sélectionnée
 
-### 3.6 Roadmap versionnée (source `ROADMAP.md` + `roadmap.json` temps réel)
-- [x] `0.01` Auth email + ligues privées
-- [x] `0.02` Matchs 1v1/2v2 poste
-- [x] `0.03` Tirage aléatoire
-- [x] `0.04` Stats classement + historique date (`ven. 05 sept.`)
-- [x] `0.05` UI clair épuré + accès protégé + fix déconnexion
-- [x] `0.06` Match détail + bordure vainqueur
-- [x] `0.07` Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)
-- [x] `0.08` 1v1 sans poste + tirage joueurs+postes aléatoire
-- [x] `0.08.1` RGPD suppression anonymisée (`Joueur supprimé`) + nav `Roadmap` (ex-Todo) + tests rapides (`quick.integration.test.js:1`) — DONE
-- [ ] `0.09` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
+### 3.6 Roadmap versionnée (source `ROADMAP.md` + `roadmap.json` temps réel) — SemVer `0.1` feature, `0.x.1` patch
+- [x] `0.1` Auth email + ligues privées
+- [x] `0.2` Matchs 1v1/2v2 poste
+- [x] `0.3` Tirage aléatoire
+- [x] `0.4` Stats classement + historique date (`ven. 05 sept.`)
+- [x] `0.5` UI clair épuré + accès protégé + fix déconnexion
+- [x] `0.6` Match détail + bordure vainqueur
+- [x] `0.7` Infra démo prod (Vercel 2 projets + Render, CORS, vérif désactivée, ligues publiques 17/5/70)
+- [x] `0.8` 1v1 sans poste + tirage joueurs+postes aléatoire
+- [x] `0.8.1` RGPD suppression anonymisée (`Joueur supprimé`) + nav `Roadmap` (ex-Todo) + tests rapides (`quick.integration.test.js:1`) — DONE
+- [ ] `0.9` **Tournoi** : Solo/Duo équipe choisie/aléatoire (arbre, tirage) — TODO
 - [ ] `0.10` Stats par poste
 - [ ] `0.11` Duos gagnants
 - [ ] `0.12` Filtrage stats période
