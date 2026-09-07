@@ -70,6 +70,9 @@ export default async function authRoutes(app, { db, pool, users, players, matche
         const msg = e.detail?.includes('email') ? 'email déjà pris' : 'pseudo déjà pris';
         return reply.code(409).send({ error: msg });
       }
+      if (e.code === '23514') {
+        return reply.code(400).send({ error: 'poste ou niveau invalide' });
+      }
       throw e;
     }
   });
