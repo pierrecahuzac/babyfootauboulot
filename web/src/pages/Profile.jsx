@@ -9,6 +9,7 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
   const [niveau, setNiveau] = useState(user?.niveau || 'Débutant');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [showDelete, setShowDelete] = useState(false);
@@ -37,11 +38,12 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
   const changePwd = async (e) => {
     e.preventDefault();
     setErr(''); setMsg('');
+    if (newPassword !== confirmNewPassword) { setErr('les mots de passe ne correspondent pas'); return; }
     const r = await authFetch('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) });
     const b = await r.json();
     if (!r.ok) { setErr(b.error); return; }
     setMsg('Mot de passe changé');
-    setOldPassword(''); setNewPassword('');
+    setOldPassword(''); setNewPassword(''); setConfirmNewPassword('');
   };
 
   const del = async () => {
@@ -92,6 +94,8 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
         <form onSubmit={changePwd} className="space-y-3">
           <input type="password" value={oldPassword} onChange={e=>setOldPassword(e.target.value)} placeholder="Ancien mot de passe" className="w-full border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-800" required />
           <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nouveau (6+)" className="w-full border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-800" required />
+          <input type="password" value={confirmNewPassword} onChange={e=>setConfirmNewPassword(e.target.value)} placeholder="Confirmer nouveau" className="w-full border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-800" required />
+          {confirmNewPassword && newPassword !== confirmNewPassword && <p className="text-xs text-amber-600">⚠️ les mots de passe ne correspondent pas</p>}
           <button className="w-full bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white py-2.5 rounded-xl font-medium text-sm">Changer</button>
         </form>
       </div>
