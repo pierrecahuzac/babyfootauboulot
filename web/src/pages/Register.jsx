@@ -6,6 +6,7 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
   const [email, setEmail] = useState('');
   const [pseudo, setPseudo] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [poste, setPoste] = useState('Attaque');
   const [niveau, setNiveau] = useState('Débutant');
   const [err, setErr] = useState('');
@@ -14,7 +15,9 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
   const submit = async (e) => {
     e.preventDefault();
     setErr(''); setInfo('');
-    const res = await fetch(`${API}/api/auth/register`, { method: 'POST', headers: { 'Content-Type':'application/json' }, credentials: 'include', body: JSON.stringify({ email, pseudo, password, poste, niveau }) });
+    if (password !== confirmPassword) { setErr('les mots de passe ne correspondent pas'); return; }
+    if (password.length < 6) { setErr('mot de passe trop court (6 min)'); return; }
+    const res = await fetch(`${API}/api/auth/register`, { method: 'POST', headers: { 'Content-Type':'application/json' }, credentials: 'include', body: JSON.stringify({ email, pseudo, password, confirmPassword, poste, niveau }) });
     const body = await res.json();
     if (!res.ok) { setErr(body.error); return; }
     onAuth(body);
@@ -36,6 +39,10 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
       <label className="block text-sm font-bold">Mot de passe
         <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
       </label>
+      <label className="block text-sm font-bold">Confirmer le mot de passe
+        <input type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="••••••" className="mt-1 w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 focus:border-emerald-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" required />
+      </label>
+      {confirmPassword && password !== confirmPassword && <p className="text-sm text-amber-600">⚠️ les mots de passe ne correspondent pas</p>}
       <div className="text-sm font-bold">Poste
         <div className="flex gap-2 mt-1">
           {['Défense','Attaque','Attaque / Défense'].map(v => (
