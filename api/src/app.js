@@ -85,6 +85,11 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS niveau TEXT CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé'))`).catch(()=>{});
     await pool.query(`UPDATE users SET poste='Attaque / Défense' WHERE poste='Les 2'`).catch(()=>{});
     await pool.query(`UPDATE players SET poste='Attaque / Défense' WHERE poste='Les 2'`).catch(()=>{});
+    // fix contrainte poste pour Attaque / Défense (ex- Les 2) — ancienne DB avait seulement Attaque/Défense/Les 2
+    await pool.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_poste_check`).catch(()=>{});
+    await pool.query(`ALTER TABLE users ADD CONSTRAINT users_poste_check CHECK (poste IN ('Attaque','Défense','Attaque / Défense','Les 2'))`).catch(()=>{});
+    await pool.query(`ALTER TABLE players DROP CONSTRAINT IF EXISTS players_poste_check`).catch(()=>{});
+    await pool.query(`ALTER TABLE players ADD CONSTRAINT players_poste_check CHECK (poste IN ('Attaque','Défense','Attaque / Défense','Les 2'))`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INT DEFAULT 0`);
     // Vérification email désactivée — auto-vérifie les comptes existants
     await pool.query(`UPDATE users SET email_verified=1 WHERE email_verified=0`).catch(()=>{});
