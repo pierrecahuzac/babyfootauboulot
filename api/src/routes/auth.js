@@ -3,7 +3,7 @@ import { hashPassword, verifyPassword, signToken, authFromRequest, hashToken, ve
 import { isValidEmail, genVerificationToken, genResetToken } from '../utils/helpers.js';
 import { isBlocked, blockedReason } from '../utils/moderation.js';
 import { anonymizeMatchesForUser } from '../utils/anonymize.js';
-import { createAuthMiddleware, getRateKey, isRateLimited, recordLoginAttempt, getIpKey, isGenericRateLimited, recordGenericAttempt } from '../middleware/auth.js';
+import { createAuthMiddleware, getRateKey, isRateLimited, recordLoginAttempt, getIpKey, isGenericRateLimited, recordGenericAttempt, isRegisterRateLimited, recordRegisterAttempt } from '../middleware/auth.js';
 
 export default async function authRoutes(app, { db, pool, users, players, matches }) {
   const getUsersTable = () => users || players;
@@ -11,15 +11,16 @@ export default async function authRoutes(app, { db, pool, users, players, matche
   const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 };
 
   app.post('/api/auth/register', async (req, reply) => {
-    const rateKeyReg = getIpKey(req, 'register');
-    if (isGenericRateLimited(rateKeyReg)) return reply.code(429).send({ error: 'trop de créations, réessaie dans 15 minutes' });
-    recordGenericAttempt(rateKeyReg);
     const { email, pseudo, password, poste, niveau, confirmPassword, passwordConfirm, confirm_password } = req.body;
     const pwdConfirm = confirmPassword ?? passwordConfirm ?? confirm_password;
     if (!email || !pseudo || !password || !poste || !niveau) return reply.code(400).send({ error: 'email, pseudo, password, poste, niveau requis' });
     if (pwdConfirm !== undefined && password !== pwdConfirm) return reply.code(400).send({ error: 'les mots de passe ne correspondent pas' });
     if (!isValidEmail(email)) return reply.code(400).send({ error: 'email invalide' });
     if (password.length < 6) return reply.code(400).send({ error: 'mot de passe trop court (6 min)' });
+    // rate-limit après validation pour ne pas pénaliser les 400 (typos) + limite 20/15min par IP (bureau = IP partagée)
+    const rateKeyReg = getIpKey(req, 'register');
+    if (isRegisterRateLimited(rateKeyReg)) return reply.code(429).send({ error: 'trop de créations, réessaie dans 15 minutes' });
+    recordRegisterAttempt(rateKeyReg);
     if (!pseudo.trim() || pseudo.trim().length < 2) return reply.code(400).send({ error: 'pseudo trop court' });
     if (pseudo.trim().length > 24) return reply.code(400).send({ error: 'pseudo trop long (24 max)' });
     if (!/^[a-zA-Z0-9._-]+$/.test(pseudo.trim())) return reply.code(400).send({ error: 'pseudo: caractères autorisés a-z 0-9 . _ -' });
