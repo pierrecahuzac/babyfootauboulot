@@ -8,6 +8,8 @@ export default async function liguesRoutes(app, { db, pool, players, matches, us
   const membersTable = ligueMembers;
   const { requireAuth } = createAuthMiddleware();
 
+  const isDemoEmail = (email) => typeof email === 'string' && email.toLowerCase().endsWith('@example.com');
+
   const isMember = async (ligueId, userId) => {
     if (!liguesTable || !membersTable) return false;
     try {
@@ -37,21 +39,26 @@ export default async function liguesRoutes(app, { db, pool, players, matches, us
 
   app.get('/api/ligues', { preHandler: requireAuth }, async (req) => {
     if (!liguesTable || !membersTable) return [];
+    const isDemo = isDemoEmail(req.user?.email);
     try {
       const allMembers = await db.select().from(membersTable);
       const myLigueIds = allMembers.filter(m => Number(m.userId ?? m.user_id) === Number(req.user.id)).map(m => Number(m.ligueId ?? m.ligue_id));
       const allLigues = await db.select().from(liguesTable);
-      // Mode démo : ligues publiques (is_private=0) visibles par tous, privées seulement si membre
+      // Ligues démo publiques (is_private=0) visibles uniquement pour @example.com, privées seulement si membre
       return allLigues.filter(l => {
         const isPrivate = l.isPrivate ?? l.is_private ?? 1;
-        if (isPrivate === 0) return true;
+        if (isPrivate === 0) return isDemo;
         return myLigueIds.includes(Number(l.id));
       }).map(l => ({
         ...l,
         invite_code: l.inviteCode ?? l.invite_code,
       }));
     } catch {
-      const { rows } = await pool.query(`SELECT l.* FROM ligues l WHERE l.is_private=0 OR l.id IN (SELECT ligue_id FROM ligue_members WHERE user_id=$1) ORDER BY l.created_at DESC`, [req.user.id]).catch(()=>({rows:[]}));
+      if (isDemo) {
+        const { rows } = await pool.query(`SELECT l.* FROM ligues l WHERE l.is_private=0 OR l.id IN (SELECT ligue_id FROM ligue_members WHERE user_id=$1) ORDER BY l.created_at DESC`, [req.user.id]).catch(()=>({rows:[]}));
+        return rows;
+      }
+      const { rows } = await pool.query(`SELECT l.* FROM ligues l WHERE l.id IN (SELECT ligue_id FROM ligue_members WHERE user_id=$1) ORDER BY l.created_at DESC`, [req.user.id]).catch(()=>({rows:[]}));
       return rows;
     }
   });
