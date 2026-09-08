@@ -1,9 +1,11 @@
-const Leaderboard = ({ leaderboard, classement, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange, onPlayerSelect, players }) => {
+import { PageSpinner } from '../components/Spinner.jsx';
+
+const Leaderboard = ({ leaderboard, classement, loading, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange, onPlayerSelect, players }) => {
   const data = leaderboard ?? classement;
   const leaguesData = leagues ?? ligues ?? [];
   const current = currentLeague ?? currentLigue;
   const handleChange = onHandleLeagueChange ?? onHandleLigueChange ?? onSelectLeague ?? onSelectLigue;
-  if (!data) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Chargement du classement…</p>;
+  if (loading || !data) return <PageSpinner label="Chargement du classement…" />;
  
   return (
     <div className="space-y-6">

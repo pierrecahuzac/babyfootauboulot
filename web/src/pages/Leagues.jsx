@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { authFetch } from '../utils/auth.js';
+import Spinner, { ButtonSpinner } from '../components/Spinner.jsx';
 
-const Leagues = ({ leagues, ligues, currentLeague, currentLigue, onSelect, onRefresh, user }) => {
+const Leagues = ({ leagues, ligues, currentLeague, currentLigue, onSelect, onRefresh, user, loadingLeagues }) => {
   const leaguesData = leagues ?? ligues ?? [];
   const current = currentLeague ?? currentLigue;
   const [name, setName] = useState('');
@@ -10,29 +11,43 @@ const Leagues = ({ leagues, ligues, currentLeague, currentLigue, onSelect, onRef
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const [visibleCode, setVisibleCode] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   const create = async (e) => {
     e.preventDefault();
+    if (creating) return;
     setErr(''); setOk('');
-    const r = await authFetch('/api/ligues', { method: 'POST', body: JSON.stringify({ name, description: desc }) });
-    const b = await r.json();
-    if (!r.ok) { setErr(b.error); return; }
-    setOk(`Ligue créée ! Code: ${b.invite_code || b.inviteCode} — partage-le en main propre`);
-    setName(''); setDesc('');
-    await onRefresh();
-    onSelect(b.id);
+    setCreating(true);
+    try {
+      const r = await authFetch('/api/ligues', { method: 'POST', body: JSON.stringify({ name, description: desc }) });
+      const b = await r.json();
+      if (!r.ok) { setErr(b.error); return; }
+      setOk(`Ligue créée ! Code: ${b.invite_code || b.inviteCode} — partage-le en main propre`);
+      setName(''); setDesc('');
+      await onRefresh();
+      onSelect(b.id);
+    } finally {
+      setCreating(false);
+    }
   };
 
   const join = async (e) => {
     e.preventDefault();
+    if (joining) return;
     setErr(''); setOk('');
-    const r = await authFetch('/api/ligues/join', { method: 'POST', body: JSON.stringify({ invite_code: code }) });
-    const b = await r.json();
-    if (!r.ok) { setErr(b.error); return; }
-    setOk(`Rejoint: ${b.name}`);
-    setCode('');
-    await onRefresh();
-    onSelect(b.id);
+    setJoining(true);
+    try {
+      const r = await authFetch('/api/ligues/join', { method: 'POST', body: JSON.stringify({ invite_code: code }) });
+      const b = await r.json();
+      if (!r.ok) { setErr(b.error); return; }
+      setOk(`Rejoint: ${b.name}`);
+      setCode('');
+      await onRefresh();
+      onSelect(b.id);
+    } finally {
+      setJoining(false);
+    }
   };
 
   if (!user) return <div className="text-center p-8 border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800"><p className="font-semibold">Connecte-toi d'abord</p><p className="text-sm text-zinc-500 mt-1">Crée un compte pour gérer tes ligues privées.</p></div>;
@@ -43,7 +58,8 @@ const Leagues = ({ leagues, ligues, currentLeague, currentLigue, onSelect, onRef
         <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100">Mes ligues privées</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Chaque ligue est isolée. Invite par code — pas de liste publique.</p>
       </div>
-      {leaguesData.length===0 && <p className="text-sm text-zinc-500 border border-dashed border-zinc-300 dark:border-zinc-600 p-4 rounded-xl text-center bg-zinc-50 dark:bg-zinc-800">Aucune ligue — crée la première !</p>}
+      {loadingLeagues && <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 py-2"><Spinner size={16} /> Chargement des ligues…</div>}
+      {leaguesData.length===0 && !loadingLeagues && <p className="text-sm text-zinc-500 border border-dashed border-zinc-300 dark:border-zinc-600 p-4 rounded-xl text-center bg-zinc-50 dark:bg-zinc-800">Aucune ligue — crée la première !</p>}
       <div className="space-y-2">
         {leaguesData.map(l=> {
           const codeVal = l.invite_code || l.inviteCode;
@@ -74,14 +90,14 @@ const Leagues = ({ leagues, ligues, currentLeague, currentLigue, onSelect, onRef
         <h3 className="font-semibold text-sm">Créer une ligue privée</h3>
         <input value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Boulot - Étage 3" className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300 bg-white dark:bg-zinc-800" required />
         <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Description (optionnel)" className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300 bg-white dark:bg-zinc-800" />
-        <button className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-violet-700">Créer — devenir owner</button>
+        <button disabled={creating} className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{creating && <ButtonSpinner />} {creating ? 'Création…' : 'Créer — devenir owner'}</button>
       </form>
       <form onSubmit={join} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
         <h3 className="font-semibold text-sm">Rejoindre avec un code</h3>
         <p className="text-xs text-zinc-500">Demande le code à ton collègue (6 caractères)</p>
         <div className="flex gap-2">
           <input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="CODE" className="flex-1 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 font-mono font-medium tracking-widest text-center text-sm bg-white dark:bg-zinc-800" maxLength={6} required />
-          <button className="bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white px-5 rounded-xl font-medium text-sm">Rejoindre</button>
+          <button disabled={joining} className="bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white px-5 rounded-xl font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{joining && <ButtonSpinner />} Rejoindre</button>
         </div>
       </form>
       {err && <p className="text-sm text-red-700 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3 rounded-xl">⚠️ {err}</p>}

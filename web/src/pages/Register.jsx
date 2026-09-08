@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ButtonSpinner } from '../components/Spinner.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -11,16 +12,23 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
   const [niveau, setNiveau] = useState('Débutant');
   const [err, setErr] = useState('');
   const [info, setInfo] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setErr(''); setInfo('');
     if (password !== confirmPassword) { setErr('les mots de passe ne correspondent pas'); return; }
     if (password.length < 6) { setErr('mot de passe trop court (6 min)'); return; }
-    const res = await fetch(`${API}/api/auth/register`, { method: 'POST', headers: { 'Content-Type':'application/json' }, credentials: 'include', body: JSON.stringify({ email, pseudo, password, confirmPassword, poste, niveau }) });
-    const body = await res.json();
-    if (!res.ok) { setErr(body.error); return; }
-    onAuth(body);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/auth/register`, { method: 'POST', headers: { 'Content-Type':'application/json' }, credentials: 'include', body: JSON.stringify({ email, pseudo, password, confirmPassword, poste, niveau }) });
+      const body = await res.json();
+      if (!res.ok) { setErr(body.error); return; }
+      onAuth(body);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,7 +65,7 @@ const Register = ({ onAuth, onBack, onSwitch }) => {
       </label>
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       {info && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {info}</p>}
-      <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-2xl font-black shadow-xl">Créer mon compte</button>
+      <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-2xl font-black shadow-xl disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{loading && <ButtonSpinner />} {loading ? 'Création…' : 'Créer mon compte'}</button>
       <p className="text-center text-sm">Déjà un compte ? <button type="button" onClick={onSwitch} className="font-black text-emerald-600 underline">Connexion</button></p>
       <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
     </form>

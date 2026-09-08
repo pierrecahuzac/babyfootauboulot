@@ -1,21 +1,27 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../utils/auth.js';
+import Spinner, { ButtonSpinner } from '../components/Spinner.jsx';
 
 const Admin = ({ user, onBack }) => {
   const [users, setUsers] = useState([]);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
   const [filter, setFilter] = useState('');
+  const [loading, setLoading] = useState(false);
   const isBlocked = (pseudo) => {
     const blocked = ['hitler','nazi','facho','raciste','antisemite'];
     const norm = pseudo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
     return blocked.some(w => norm.includes(w));
   };
   const load = async () => {
+    if (loading) return;
     setErr(''); setMsg('');
-    const r = await authFetch('/api/admin/users');
-    if (!r.ok) { setErr((await r.json()).error || 'accès refus'); return; }
-    setUsers(await r.json());
+    setLoading(true);
+    try {
+      const r = await authFetch('/api/admin/users');
+      if (!r.ok) { setErr((await r.json()).error || 'accès refus'); return; }
+      setUsers(await r.json());
+    } finally { setLoading(false); }
   };
   useEffect(()=>{ if(user?.role==='admin') load(); },[user]);
   const changeRole = async (id, role) => {
@@ -45,6 +51,7 @@ const Admin = ({ user, onBack }) => {
       <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="filtrer pseudo/email" className="w-full border-2 border-zinc-200 rounded-2xl px-4 py-3 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" />
       {err && <p className="text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 p-3 rounded-2xl">⚠️ {err}</p>}
       {msg && <p className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 p-3 rounded-2xl">✅ {msg}</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 py-2"><Spinner size={16} /> Chargement des utilisateurs…</div>}
       <div className="space-y-2">
         {filtered.map(u=>(
           <div key={u.id} className={`p-3 rounded-2xl border-2 flex justify-between items-center ${u.role==='admin'?'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700':'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-700'}`}>
@@ -59,7 +66,7 @@ const Admin = ({ user, onBack }) => {
           </div>
         ))}
       </div>
-      <button onClick={load} className="w-full bg-zinc-900 dark:bg-zinc-700 text-white py-3 rounded-2xl font-black">Rafraîchir</button>
+      <button onClick={load} disabled={loading} className="w-full bg-zinc-900 dark:bg-zinc-700 text-white py-3 rounded-2xl font-black disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{loading && <ButtonSpinner />} Rafraîchir</button>
     </div>
   );
 };

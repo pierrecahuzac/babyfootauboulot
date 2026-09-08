@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ButtonSpinner } from '../components/Spinner.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -7,16 +8,21 @@ const Forgot = ({ onBack, onReset }) => {
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   const [token, setToken] = useState('');
+  const [loading, setLoading] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setErr(''); setOk(''); setToken('');
-    const r = await fetch(`${API}/api/auth/forgot`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ email }) });
-    const b = await r.json();
-    if (!r.ok) { setErr(b.error); return; }
-    if (b.resetToken) {
-      setToken(b.resetToken);
-      setOk('Lien de réinitialisation généré — poursuis ci-dessous.');
-    } else setOk(b.message || 'Si ce compte existe, un email a été envoyé.');
+    setLoading(true);
+    try {
+      const r = await fetch(`${API}/api/auth/forgot`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ email }) });
+      const b = await r.json();
+      if (!r.ok) { setErr(b.error); return; }
+      if (b.resetToken) {
+        setToken(b.resetToken);
+        setOk('Lien de réinitialisation généré — poursuis ci-dessous.');
+      } else setOk(b.message || 'Si ce compte existe, un email a été envoyé.');
+    } finally { setLoading(false); }
   };
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -25,7 +31,7 @@ const Forgot = ({ onBack, onReset }) => {
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
       {token && <button type="button" onClick={()=>onReset(token)} className="w-full bg-amber-500 text-white py-3 rounded-2xl font-black">Aller au reset →</button>}
-      <button className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black dark:bg-zinc-700">Envoyer</button>
+      <button disabled={loading} className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-black dark:bg-zinc-700 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{loading && <ButtonSpinner />} {loading ? 'Envoi…' : 'Envoyer'}</button>
       <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour connexion</button>
     </form>
   );
