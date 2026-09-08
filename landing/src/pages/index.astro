@@ -5,21 +5,9 @@ const isProd = appUrl.includes('app.');
 
 const title = "Babyfoot au boulot — Ligue et tournoi babyfoot au bureau | 1v1 2v2, tirage et classement";
 const description = "Organise tes parties de babyfoot au bureau : ligues privées par équipe, matchs 1v1/2v2 (Attaque/Défense), tirage aléatoire et classement live. Gratuit, mobile-first, open source.";
-
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    { "@type": "Question", "name": "Comment créer une ligue privée ?", "acceptedAnswer": { "@type": "Answer", "text": "Crée ton compte en 10s, clique sur Gérer mes ligues, crée ta ligue et partage le code d'invitation à tes collègues." } },
-    { "@type": "Question", "name": "Quelle différence entre 1v1 et 2v2 ?", "acceptedAnswer": { "@type": "Answer", "text": "1v1 : un joueur par équipe sans poste, il joue Attaque et Défense. 2v2 : deux joueurs par équipe avec un Attaque et un Défense distincts." } },
-    { "@type": "Question", "name": "Le tirage aléatoire est-il équitable ?", "acceptedAnswer": { "@type": "Answer", "text": "Oui, le tirage mélange joueurs et postes (Attaque/Défense) avec un reverse 50% pour varier les équipes." } },
-    { "@type": "Question", "name": "L'app est-elle gratuite et open source ?", "acceptedAnswer": { "@type": "Answer", "text": "Oui, l'app est gratuite, hébergeable soi-même via Docker, et disponible en open source." } }
-  ]
-};
 ---
 
 <Layout title={title} description={description}>
-  <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
 
   <header class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center" role="banner">
     <a href="/" class="flex items-center gap-2" aria-label="Accueil Babyfoot au boulot">
@@ -33,7 +21,7 @@ const faqJsonLd = {
 
   <main class="max-w-6xl mx-auto px-6">
     <!-- Hero -->
-    <section class="mt-8 grid lg:grid-cols-2 gap-8 items-center" aria-labelledby="hero-title">
+    <section class="mt-8 grid lg:grid-cols-2 gap-8 items-center overflow-hidden" aria-labelledby="hero-title">
       <div>
         <span class="inline-block bg-amber-400 text-amber-950 text-xs font-black px-3 py-1 rounded-full">🏆 Mobile-first • Au bureau • Gratuit</span>
         <h1 id="hero-title" class="mt-4 text-4xl lg:text-5xl font-black leading-[0.9] tracking-tight">
@@ -55,8 +43,8 @@ const faqJsonLd = {
         </div>
         <p class="mt-3 text-xs text-zinc-500">Ligues privées • Invitation par code • Stats en direct • Open source</p>
       </div>
-      <div class="relative" aria-hidden="true">
-        <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-zinc-100 p-4 rotate-1">
+      <div class="relative min-w-0 max-w-full p-2" aria-hidden="true">
+        <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-zinc-100 p-4 rotate-1 max-w-full">
           <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white">
             <p class="font-black">Prêt à jouer ?</p>
             <p class="text-sm opacity-90">Tirage aléatoire 2v2 en 1 clic</p>
@@ -69,7 +57,7 @@ const faqJsonLd = {
             <span>Classement</span><span class="bg-amber-400 px-2 py-0.5 rounded-full">🥇 pierre_j 3V</span>
           </div>
         </div>
-        <div class="absolute -z-10 -bottom-6 -right-6 w-full h-full bg-gradient-to-br from-amber-200 to-orange-200 rounded-[2rem] rotate-2"></div>
+        <div class="absolute -z-10 inset-0 translate-x-3 translate-y-3 bg-gradient-to-br from-amber-200 to-orange-200 rounded-[2rem] rotate-2"></div>
       </div>
     </section>
 
@@ -111,29 +99,6 @@ const faqJsonLd = {
           <p class="font-bold mt-1">Tes stats</p>
           <p class="text-sm text-zinc-600">Classement, victoires et historique de tes matchs filtrés par ligue.</p>
         </div>
-      </div>
-    </section>
-
-    <!-- FAQ SEO -->
-    <section class="mt-12 bg-white rounded-[2rem] border-2 border-zinc-100 p-6" aria-labelledby="faq-title">
-      <h2 id="faq-title" class="text-xl font-black tracking-tight">Questions fréquentes</h2>
-      <div class="mt-4 grid gap-4">
-        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
-          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">Comment créer une ligue privée ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
-          <p class="text-sm text-zinc-600 mt-2">Crée ton compte, va dans Gérer mes ligues, clique Créer une ligue et partage le code à tes collègues. Ils rejoignent via le code.</p>
-        </details>
-        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
-          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">Quelle différence entre 1v1 et 2v2 ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
-          <p class="text-sm text-zinc-600 mt-2">1v1 : un joueur par équipe, pas de poste (il joue partout). 2v2 : deux par équipe avec un Attaque et un Défense.</p>
-        </details>
-        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
-          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">L'app est-elle gratuite ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
-          <p class="text-sm text-zinc-600 mt-2">Oui, gratuite et open source. Hébergeable toi-même avec Docker ou utilisable sur notre démo hébergée.</p>
-        </details>
-        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
-          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">Puis-je jouer si on est moins de 4 ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
-          <p class="text-sm text-zinc-600 mt-2">Oui, le mode 1v1 ne demande que 2 joueurs. Le tirage 2v2 se grise automatiquement s'il manque de joueurs dans la ligue.</p>
-        </details>
       </div>
     </section>
 
