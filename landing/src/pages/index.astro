@@ -2,23 +2,41 @@
 import Layout from '../layouts/Layout.astro';
 const appUrl = import.meta.env.PUBLIC_APP_URL || 'http://localhost:55174';
 const isProd = appUrl.includes('app.');
+
+const title = "Babyfoot au boulot — Ligue et tournoi babyfoot au bureau | 1v1 2v2, tirage et classement";
+const description = "Organise tes parties de babyfoot au bureau : ligues privées par équipe, matchs 1v1/2v2 (Attaque/Défense), tirage aléatoire et classement live. Gratuit, mobile-first, open source.";
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Comment créer une ligue privée ?", "acceptedAnswer": { "@type": "Answer", "text": "Crée ton compte en 10s, clique sur Gérer mes ligues, crée ta ligue et partage le code d'invitation à tes collègues." } },
+    { "@type": "Question", "name": "Quelle différence entre 1v1 et 2v2 ?", "acceptedAnswer": { "@type": "Answer", "text": "1v1 : un joueur par équipe sans poste, il joue Attaque et Défense. 2v2 : deux joueurs par équipe avec un Attaque et un Défense distincts." } },
+    { "@type": "Question", "name": "Le tirage aléatoire est-il équitable ?", "acceptedAnswer": { "@type": "Answer", "text": "Oui, le tirage mélange joueurs et postes (Attaque/Défense) avec un reverse 50% pour varier les équipes." } },
+    { "@type": "Question", "name": "L'app est-elle gratuite et open source ?", "acceptedAnswer": { "@type": "Answer", "text": "Oui, l'app est gratuite, hébergeable soi-même via Docker, et disponible en open source." } }
+  ]
+};
 ---
 
-<Layout title="Babyfoot au boulot — Organise tes parties">
-  <header class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">⚽</span>
+<Layout title={title} description={description}>
+  <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+
+  <header class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center" role="banner">
+    <a href="/" class="flex items-center gap-2" aria-label="Accueil Babyfoot au boulot">
+      <span class="text-2xl" aria-hidden="true">⚽</span>
       <span class="font-black tracking-tight">BABYFOOT<span class="text-emerald-600"> AU BOULOT</span></span>
-    </div>
-    <a href={appUrl} class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-2.5 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition">Ouvrir l'app →</a>
+    </a>
+    <nav aria-label="Navigation principale">
+      <a href={appUrl} class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-2.5 rounded-2xl font-black shadow-lg hover:scale-[1.02] transition">Ouvrir l'app →</a>
+    </nav>
   </header>
 
   <main class="max-w-6xl mx-auto px-6">
     <!-- Hero -->
-    <section class="mt-8 grid lg:grid-cols-2 gap-8 items-center">
+    <section class="mt-8 grid lg:grid-cols-2 gap-8 items-center" aria-labelledby="hero-title">
       <div>
-        <span class="inline-block bg-amber-400 text-amber-950 text-xs font-black px-3 py-1 rounded-full">🏆 Mobile-first • Au bureau</span>
-        <h1 class="mt-4 text-4xl lg:text-5xl font-black leading-[0.9] tracking-tight">
+        <span class="inline-block bg-amber-400 text-amber-950 text-xs font-black px-3 py-1 rounded-full">🏆 Mobile-first • Au bureau • Gratuit</span>
+        <h1 id="hero-title" class="mt-4 text-4xl lg:text-5xl font-black leading-[0.9] tracking-tight">
           La pause<br/>
           <span class="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">babyfoot</span><br/>
           qui soude l'équipe
@@ -27,17 +45,17 @@ const isProd = appUrl.includes('app.');
           Inscris ton équipe en 10s, lance un <b>1v1</b> ou <b>2v2</b>, laisse le <b>tirage aléatoire</b> mixer les postes
           <span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs font-black">Attaque</span>
           <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full text-xs font-black">Défense</span>
-          et suis tes <b>stats</b> en live.
+          et suis tes <b>stats</b> en live. Ligues privées, invitation par code, classement auto.
         </p>
         <div class="mt-6 flex flex-wrap gap-3">
-          <a href={appUrl} class="bg-zinc-900 text-white px-6 py-3.5 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition">
+          <a href={appUrl} class="bg-zinc-900 text-white px-6 py-3.5 rounded-2xl font-black shadow-xl hover:scale-[1.02] transition" aria-label="Lancer l'application Babyfoot au boulot">
             🚀 Lancer l'app
           </a>
-          <a href={`${appUrl}/#register`} class="bg-white border-2 border-zinc-200 px-6 py-3.5 rounded-2xl font-bold hover:bg-zinc-50 transition">✨ S'inscrire</a>
+          <a href={`${appUrl}/#register`} class="bg-white border-2 border-zinc-200 px-6 py-3.5 rounded-2xl font-bold hover:bg-zinc-50 transition" aria-label="Créer un compte">✨ S'inscrire gratuitement</a>
         </div>
-        <p class="mt-3 text-xs text-zinc-500">Ligues privées • Invitation par code • Stats en direct</p>
+        <p class="mt-3 text-xs text-zinc-500">Ligues privées • Invitation par code • Stats en direct • Open source</p>
       </div>
-      <div class="relative">
+      <div class="relative" aria-hidden="true">
         <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-zinc-100 p-4 rotate-1">
           <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white">
             <p class="font-black">Prêt à jouer ?</p>
@@ -56,40 +74,70 @@ const isProd = appUrl.includes('app.');
     </section>
 
     <!-- Features -->
-    <section class="mt-16 grid md:grid-cols-3 gap-4">
-      {[
-        { icon: '⚔️', title: '1v1 / 2v2', desc: 'Choisis le format, chaque liste = un poste (Attaque/Défense).', color: 'from-blue-500 to-cyan-500' },
-        { icon: '🎲', title: 'Tirage aléatoire', desc: 'Mélange distinct, pas deux fois le même joueur. Parfait pour mixer.', color: 'from-amber-500 to-orange-500' },
-        { icon: '📊', title: 'Stats live', desc: 'Victoires, défaites, ratio, classement auto. Historique des matchs.', color: 'from-violet-500 to-purple-500' },
-      ].map(f => (
-        <div class="bg-white rounded-3xl p-5 border-2 border-zinc-100 shadow-sm">
-          <div class={`w-10 h-10 rounded-2xl bg-gradient-to-br ${f.color} text-white flex items-center justify-center`}>{f.icon}</div>
-          <h3 class="mt-3 font-black">{f.title}</h3>
-          <p class="text-sm text-zinc-600 mt-1">{f.desc}</p>
-        </div>
-      ))}
+    <section class="mt-16" aria-labelledby="features-title">
+      <h2 id="features-title" class="text-2xl font-black tracking-tight text-zinc-900">Pourquoi Babyfoot au boulot ?</h2>
+      <p class="text-sm text-zinc-600 mt-2 max-w-2xl">Une app pensée pour le bureau : pas de pub, pas de tracking, juste ton babyfoot, tes collègues et un vrai classement.</p>
+      <div class="mt-6 grid md:grid-cols-3 gap-4">
+        {[
+          { icon: '⚔️', title: '1v1 / 2v2 avec postes', desc: 'Choisis le format. 1v1 sans poste (solo joue partout), 2v2 avec Attaque/Défense distincts.', color: 'from-blue-500 to-cyan-500' },
+          { icon: '🎲', title: 'Tirage aléatoire équitable', desc: 'Mélange joueurs et postes (reverse 50%). Grisé si pas assez de joueurs dans la ligue.', color: 'from-amber-500 to-orange-500' },
+          { icon: '📊', title: 'Stats et classement live', desc: 'Victoires, défaites, ratio, historique daté. Fiche joueur et bordure vainqueur.', color: 'from-violet-500 to-purple-500' },
+        ].map(f => (
+          <div class="bg-white rounded-3xl p-5 border-2 border-zinc-100 shadow-sm">
+            <div class={`w-10 h-10 rounded-2xl bg-gradient-to-br ${f.color} text-white flex items-center justify-center`} aria-hidden="true">{f.icon}</div>
+            <h3 class="mt-3 font-black">{f.title}</h3>
+            <p class="text-sm text-zinc-600 mt-1">{f.desc}</p>
+          </div>
+        ))}
+      </div>
     </section>
 
     <!-- How -->
-    <section class="mt-12 bg-white rounded-[2rem] border-2 border-zinc-100 p-6 grid md:grid-cols-3 gap-6">
-      <div>
-        <p class="text-xs font-black tracking-widest text-emerald-600">01 — CRÉE</p>
-        <p class="font-bold">Ta ligue privée</p>
-        <p class="text-sm text-zinc-600">Crée ta ligue en 10s et partage le code d'invitation à tes collègues.</p>
-      </div>
-      <div>
-        <p class="text-xs font-black tracking-widest text-blue-600">02 — JOUE</p>
-        <p class="font-bold">1v1 ou 2v2</p>
-        <p class="text-sm text-zinc-600">Choisis tes équipes, tirage au sort et enregistre le score.</p>
-      </div>
-      <div>
-        <p class="text-xs font-black tracking-widest text-amber-600">03 — SUIS</p>
-        <p class="font-bold">Tes stats</p>
-        <p class="text-sm text-zinc-600">Classement, victoires et historique de tes matchs.</p>
+    <section class="mt-12 bg-white rounded-[2rem] border-2 border-zinc-100 p-6" aria-labelledby="how-title">
+      <h2 id="how-title" class="text-xl font-black tracking-tight">Comment ça marche ?</h2>
+      <div class="mt-6 grid md:grid-cols-3 gap-6">
+        <div>
+          <p class="text-xs font-black tracking-widest text-emerald-600">01 — CRÉE</p>
+          <p class="font-bold mt-1">Ta ligue privée</p>
+          <p class="text-sm text-zinc-600">Crée ta ligue en 10s et partage le code d'invitation à tes collègues. Publique ou privée.</p>
+        </div>
+        <div>
+          <p class="text-xs font-black tracking-widest text-blue-600">02 — JOUE</p>
+          <p class="font-bold mt-1">1v1 ou 2v2</p>
+          <p class="text-sm text-zinc-600">Choisis tes équipes, tirage au sort et enregistre le score 0-10. Validation en 1 clic.</p>
+        </div>
+        <div>
+          <p class="text-xs font-black tracking-widest text-amber-600">03 — SUIS</p>
+          <p class="font-bold mt-1">Tes stats</p>
+          <p class="text-sm text-zinc-600">Classement, victoires et historique de tes matchs filtrés par ligue.</p>
+        </div>
       </div>
     </section>
 
-    <section class="mt-8 bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-[2rem] p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+    <!-- FAQ SEO -->
+    <section class="mt-12 bg-white rounded-[2rem] border-2 border-zinc-100 p-6" aria-labelledby="faq-title">
+      <h2 id="faq-title" class="text-xl font-black tracking-tight">Questions fréquentes</h2>
+      <div class="mt-4 grid gap-4">
+        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
+          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">Comment créer une ligue privée ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
+          <p class="text-sm text-zinc-600 mt-2">Crée ton compte, va dans Gérer mes ligues, clique Créer une ligue et partage le code à tes collègues. Ils rejoignent via le code.</p>
+        </details>
+        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
+          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">Quelle différence entre 1v1 et 2v2 ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
+          <p class="text-sm text-zinc-600 mt-2">1v1 : un joueur par équipe, pas de poste (il joue partout). 2v2 : deux par équipe avec un Attaque et un Défense.</p>
+        </details>
+        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
+          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">L'app est-elle gratuite ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
+          <p class="text-sm text-zinc-600 mt-2">Oui, gratuite et open source. Hébergeable toi-même avec Docker ou utilisable sur notre démo hébergée.</p>
+        </details>
+        <details class="group bg-zinc-50 rounded-2xl p-4 open:bg-white border border-zinc-100">
+          <summary class="font-bold cursor-pointer list-none flex justify-between items-center">Puis-je jouer si on est moins de 4 ? <span class="text-zinc-400 group-open:rotate-180 transition">⌄</span></summary>
+          <p class="text-sm text-zinc-600 mt-2">Oui, le mode 1v1 ne demande que 2 joueurs. Le tirage 2v2 se grise automatiquement s'il manque de joueurs dans la ligue.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="mt-8 bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-[2rem] p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4" aria-label="Appel à l'action">
       <div>
         <p class="font-black text-lg">Prêt pour la revanche ?</p>
         <p class="text-sm opacity-70">Crée ton compte en 10s et lance ta première partie.</p>
@@ -99,6 +147,11 @@ const isProd = appUrl.includes('app.');
   </main>
 
   <footer class="max-w-6xl mx-auto px-6 py-10 text-center text-xs text-zinc-500">
-    <p>© {new Date().getFullYear()} Babyfoot au boulot</p>
+    <div class="flex justify-center gap-4 mb-3">
+      <a href={appUrl} class="hover:text-zinc-700 underline">App</a>
+      <a href="https://github.com/pierrecahuzac/babyfootauboulot" class="hover:text-zinc-700 underline">GitHub</a>
+      <a href="/sitemap.xml" class="hover:text-zinc-700 underline">Sitemap</a>
+    </div>
+    <p>© {new Date().getFullYear()} Babyfoot au boulot — Gratuit &amp; open source • Fait pour les pauses au bureau</p>
   </footer>
 </Layout>
