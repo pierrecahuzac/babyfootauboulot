@@ -52,6 +52,14 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
   const getUsersTable = () => users || players;
   const { requireAuth } = createAuthMiddleware();
 
+  const isPolyvalentPoste = (p) => p === 'Attaque / Défense' || p === 'Les 2';
+  const matchPoste = (userPoste, filterPoste) => {
+    if (!filterPoste) return true;
+    if (filterPoste === 'Les 2' || filterPoste === 'Attaque / Défense') return isPolyvalentPoste(userPoste);
+    if (filterPoste === 'Attaque' || filterPoste === 'Défense') return userPoste === filterPoste || isPolyvalentPoste(userPoste);
+    return userPoste === filterPoste;
+  };
+
   app.get('/api/players', async (req, reply) => {
     const ligueId = getLigueId(req);
     const { niveau, poste } = req.query;
@@ -63,9 +71,9 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
         const userIds = members.filter(m => Number(m.ligueId ?? m.ligue_id) === ligueId).map(m => Number(m.userId ?? m.user_id));
         let allUsers = await db.select().from(getUsersTable());
         
-        // Appliquer filtres
+        // Appliquer filtres (inclusif: Attaque/Défense inclut polyvalents, Les 2 = polyvalent seul)
         if (niveau) allUsers = allUsers.filter(u => u.niveau === niveau);
-        if (poste) allUsers = allUsers.filter(u => u.poste === poste);
+        if (poste) allUsers = allUsers.filter(u => matchPoste(u.poste, poste));
         
         const filtered = allUsers.filter(u => userIds.includes(Number(u.id)));
         return filtered.map(u => ({ id: u.id, pseudo: u.pseudo, poste: u.poste, niveau: u.niveau, createdAt: u.createdAt || u.created_at }));
@@ -73,19 +81,34 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
         let sql = `SELECT u.id, u.pseudo, u.poste, u.niveau, u.created_at FROM users u JOIN ligue_members m ON m.user_id=u.id WHERE m.ligue_id=$1`;
         const params = [ligueId];
         if (niveau) { sql += ` AND u.niveau=$${params.length + 1}`; params.push(niveau); }
-        if (poste) { sql += ` AND u.poste=$${params.length + 1}`; params.push(poste); }
+        if (poste) {
+          if (poste === 'Les 2' || poste === 'Attaque / Défense') {
+            sql += ` AND u.poste IN ('Attaque / Défense','Les 2')`;
+          } else if (poste === 'Attaque' || poste === 'Défense') {
+            sql += ` AND u.poste IN ($${params.length + 1},'Attaque / Défense','Les 2')`; params.push(poste);
+          } else {
+            sql += ` AND u.poste=$${params.length + 1}`; params.push(poste);
+          }
+        }
         sql += ` ORDER BY u.created_at`;
         const { rows } = await pool.query(sql, params);
         return rows;
       }
     }
     
-    // Pas de ligueId, filtrer directement sur la table players
-    let query = db.select().from(players);
-    if (niveau) query = query.where(eq(players.niveau, niveau));
-    if (poste) query = query.where(eq(players.poste, poste));
-    
-    return query.orderBy(players.createdAt);
+    // Pas de ligueId, filtrer directement sur la table players (inclusif)
+    try {
+      let allPlayers = await db.select().from(players);
+      if (niveau) allPlayers = allPlayers.filter(p => p.niveau === niveau);
+      if (poste) allPlayers = allPlayers.filter(p => matchPoste(p.poste, poste));
+      allPlayers.sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
+      return allPlayers;
+    } catch {
+      let query = db.select().from(players);
+      if (niveau) query = query.where(eq(players.niveau, niveau));
+      if (poste) query = query.where(eq(players.poste, poste));
+      return query.orderBy(players.createdAt);
+    }
   });
 
   app.patch('/api/players/:id', { preHandler: requireAuth }, async (req, reply) => {

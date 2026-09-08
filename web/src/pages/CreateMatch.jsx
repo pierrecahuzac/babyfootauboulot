@@ -17,8 +17,12 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
   const [isRandom, setIsRandom] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const safePlayers = Array.isArray(players) ? players : [];
+  const need = format === '1v1' ? 2 : 4;
+  const canRandomize = safePlayers.length >= need;
+
   const toTeam = (pseudo, poste) => {
-    const p = players.find(x => x.pseudo === pseudo);
+    const p = safePlayers.find(x => x.pseudo === pseudo);
     if (!p) return poste ? { pseudo, poste } : { pseudo };
     return poste ? { id: p.id, pseudo: p.pseudo, poste } : { id: p.id, pseudo: p.pseudo };
   };
@@ -34,12 +38,11 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
 
   const randomize = () => {
     setErr('');
-    const need = format === '1v1' ? 2 : 4;
-    if (players.length < need) {
-      setErr(`Pas assez de joueurs : ${players.length}/${need} (inscris-en d'autres)`);
+    if (!canRandomize) {
+      setErr(`Pas assez de joueurs : ${safePlayers.length}/${need} (inscris-en d'autres)`);
       return;
     }
-    const picked = shuffle(players).slice(0, need);
+    const picked = shuffle(safePlayers).slice(0, need);
     if (format === '1v1') {
       setBleue1(picked[0].pseudo); setRouge1(picked[1].pseudo);
       setBleue2(''); setRouge2('');
@@ -84,7 +87,7 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
       {posteLabel && <p className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">{posteLabel}</p>}
       <select value={val} onChange={e=>setter(e.target.value)} className={`w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 bg-white dark:bg-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300 ${isRandom ? 'animate-pulse' : ''}`}>
         <option value="">{posteLabel ? `— ${posteLabel.toLowerCase()} —` : '— choisir joueur —'}</option>
-        {players.map(p=><option key={p.id} value={p.pseudo}>{p.pseudo} · {p.poste}</option>)}
+        {safePlayers.map(p=><option key={p.id} value={p.pseudo}>{p.pseudo} · {p.poste}</option>)}
       </select>
     </div>
   );
@@ -139,10 +142,19 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
         <button type="button" onClick={()=>setFormat('2v2')} className={`flex-1 py-2.5 rounded-lg font-medium text-sm transition ${format==='2v2'?'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600': 'text-zinc-500'}`}>2 vs 2</button>
       </div>
 
-      <button type="button" onClick={randomize} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-3 rounded-xl font-medium text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2">
+      <button
+        type="button"
+        onClick={randomize}
+        disabled={!canRandomize || loading}
+        title={!canRandomize && !loading ? `Pas assez de joueurs : ${safePlayers.length}/${need} pour un ${format}` : undefined}
+        className={`w-full border py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition ${!canRandomize || loading ? 'border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60' : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
+      >
         <span className={isRandom ? 'animate-spin' : ''}>🎲</span> Tirage aléatoire {format}
-        <span className="bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full text-xs font-medium">{format==='1v1' ? '2 joueurs' : '4 joueurs'}</span>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${!canRandomize || loading ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500' : 'bg-zinc-100 dark:bg-zinc-700'}`}>{format==='1v1' ? '2 joueurs' : '4 joueurs'}</span>
       </button>
+      {!canRandomize && !loading && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center -mt-1">Pas assez de joueurs pour un {format} : {safePlayers.length}/{need} dans cette ligue</p>
+      )}
 
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sky-500"></span>Équipe Bleue</p>

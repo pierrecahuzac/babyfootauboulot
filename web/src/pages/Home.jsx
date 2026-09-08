@@ -9,8 +9,17 @@ const Home = ({ players, loading, onNav, user, league, ligue, onLeagues, onLigue
   const [filterPoste, setFilterPoste] = useState('');
   const [filterNiveau, setFilterNiveau] = useState('');
 
+  const isPolyvalent = (poste) => poste === 'Attaque / Défense' || poste === 'Les 2';
   const filteredPlayers = players.filter(p => {
-    if (filterPoste && p.poste !== filterPoste) return false;
+    if (filterPoste) {
+      if (filterPoste === 'Les 2' || filterPoste === 'Attaque / Défense') {
+        if (!isPolyvalent(p.poste)) return false;
+      } else if (filterPoste === 'Attaque' || filterPoste === 'Défense') {
+        if (p.poste !== filterPoste && !isPolyvalent(p.poste)) return false;
+      } else {
+        if (p.poste !== filterPoste) return false;
+      }
+    }
     if (filterNiveau && p.niveau !== filterNiveau) return false;
     return true;
   });
@@ -103,7 +112,7 @@ const Home = ({ players, loading, onNav, user, league, ligue, onLeagues, onLigue
                 <option value="">Tous les niveaux</option>
                 <option value="Débutant">Débutant</option>
                 <option value="Intermédiaire">Intermédiaire</option>
-                <option value="Avancé">Avancé</option>
+                <option value="Confirmé">Confirmé</option>
               </select>
             </div>
           </div>
