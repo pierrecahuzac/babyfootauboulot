@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" rx="32" fill="#10b981"/>
+  <rect x="40" y="40" width="1120" height="550" rx="24" fill="white"/>
+  <text x="600" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="900" fill="#0f172a">BABYFOOT</text>
+  <text x="600" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="900" fill="#10b981">AU BOULOT</text>
+  <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#52525b">Ligue et tournoi babyfoot au bureau • 1v1 2v2</text>
+  <text x="600" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#71717a">Tirage aléatoire • Classement live • Gratuit &amp; open source</text>
+  <text x="600" y="520" text-anchor="middle" font-size="48">⚽</text>
+</svg>
