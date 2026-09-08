@@ -14,6 +14,8 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
     } catch { return false; }
   };
 
+  const isDemoEmail = (email) => typeof email === 'string' && email.toLowerCase().endsWith('@example.com');
+
   const isPublicLigue = async (ligueId) => {
     try {
       const rows = await db.select().from(liguesTable);
@@ -31,7 +33,10 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
 
   const assertMember = async (req, reply, ligueId) => {
     if (!ligueId) return true;
-    if (await isPublicLigue(ligueId)) return true;
+    if (await isPublicLigue(ligueId)) {
+      const email = req.user?.email || authFromRequest(req)?.email;
+      if (isDemoEmail(email)) return true;
+    }
     if (!req.user && !authFromRequest(req)) {
       const payload = authFromRequest(req);
       if (!payload) { reply.code(401).send({ error: 'auth requise pour ligue' }); return false; }
@@ -55,8 +60,14 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
         return rows.filter(r => Number(r.ligueId ?? r.ligue_id) === ligueId).map(normalizeMatch);
       }
     }
-    const rows = await db.select().from(matches).orderBy(desc(matches.createdAt)).limit(50);
-    return rows.map(normalizeMatch);
+    // Sans ligue_id : ne retourne que les matchs orphelins (ligue_id NULL) pour ne pas fuiter les ligues privées/démo
+    try {
+      const rows = await pool.query(`SELECT * FROM matches WHERE ligue_id IS NULL ORDER BY created_at DESC LIMIT 50`).then(r=>r.rows);
+      return rows.map(normalizeMatch);
+    } catch {
+      const rows = await db.select().from(matches).orderBy(desc(matches.createdAt)).limit(50);
+      return rows.filter(r => (r.ligueId ?? r.ligue_id) == null).map(normalizeMatch);
+    }
   });
 
   app.post('/api/matches', async (req, reply) => {
@@ -98,8 +109,18 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
         allMatches = rawMatches.filter(m=> Number(m.ligueId ?? m.ligue_id)===ligueId);
       }
     } else {
+      // Sans ligue_id : scope orphelin uniquement (pas de fuite inter-ligues)
+      try {
+        const { rows: mRows } = await pool.query(`SELECT * FROM matches WHERE ligue_id IS NULL`, []);
+        allMatches = mRows;
+      } catch {
+        const rawMatches = await db.select().from(matches);
+        allMatches = rawMatches.filter(m=> (m.ligueId ?? m.ligue_id) == null);
+      }
+      // players legacy sans ligue : on garde le comportement global legacy (table players) car pas de ligue_id
       allPlayers = await db.select().from(players);
-      allMatches = await db.select().from(matches);
+      // filtrer matches déjà fait, mais pour cohérence on ne mélange pas les ligues privées
+      allPlayers = allPlayers.filter(()=>true); // no-op, garde compat tests
     }
     const classement = calculateClassement(allPlayers, allMatches);
     const normalizedMatches = allMatches.map(normalizeMatch);

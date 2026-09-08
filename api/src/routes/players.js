@@ -15,6 +15,8 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
     } catch { return false; }
   };
 
+  const isDemoEmail = (email) => typeof email === 'string' && email.toLowerCase().endsWith('@example.com');
+
   const isPublicLigue = async (ligueId) => {
     try {
       const rows = await db.select().from(liguesTable);
@@ -32,7 +34,10 @@ export default async function playersRoutes(app, { db, pool, players, matches, u
 
   const assertMember = async (req, reply, ligueId) => {
     if (!ligueId) return true;
-    if (await isPublicLigue(ligueId)) return true;
+    if (await isPublicLigue(ligueId)) {
+      const email = req.user?.email || authFromRequest(req)?.email;
+      if (isDemoEmail(email)) return true;
+    }
     if (!req.user && !authFromRequest(req)) {
       const payload = authFromRequest(req);
       if (!payload) { reply.code(401).send({ error: 'auth requise pour ligue' }); return false; }

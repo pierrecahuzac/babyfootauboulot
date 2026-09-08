@@ -188,6 +188,9 @@ const createQuickMock = () => {
         if(u && s.includes('password_hash')) { /* handled via drizzle fallback */ }
         return { rows: u?[u]:[] };
       }
+      if (s.includes('ligue_id IS NULL')) {
+        return { rows: matches.filter(m=> (m.ligue_id ?? m.ligueId ?? m.ligue_id) == null) };
+      }
       if (s.includes('FROM matches WHERE ligue_id')) {
         const ligId=params[0]; return { rows: matches.filter(m=> Number(m.ligue_id ?? m.ligueId)===Number(ligId)) };
       }
