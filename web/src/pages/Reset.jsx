@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ButtonSpinner } from '../components/Spinner.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -15,15 +16,20 @@ const Reset = ({ onBack, onDone, initialToken }) => {
   const [confirmPwd, setConfirmPwd] = useState('');
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
+  const [loading, setLoading] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setErr(''); setOk('');
     if (pwd !== confirmPwd) { setErr('les mots de passe ne correspondent pas'); return; }
-    const r = await fetch(`${API}/api/auth/reset`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ token, newPassword: pwd }) });
-    const b = await r.json();
-    if (!r.ok) { setErr(b.error); return; }
-    setOk('Mot de passe réinitialisé — connecte-toi');
-    setTimeout(()=>onDone(), 1200);
+    setLoading(true);
+    try {
+      const r = await fetch(`${API}/api/auth/reset`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ token, newPassword: pwd }) });
+      const b = await r.json();
+      if (!r.ok) { setErr(b.error); return; }
+      setOk('Mot de passe réinitialisé — connecte-toi');
+      setTimeout(()=>onDone(), 1200);
+    } finally { setLoading(false); }
   };
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -34,7 +40,7 @@ const Reset = ({ onBack, onDone, initialToken }) => {
       {confirmPwd && pwd !== confirmPwd && <p className="text-sm text-amber-600">⚠️ les mots de passe ne correspondent pas</p>}
       {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-2xl">⚠️ {err}</p>}
       {ok && <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">✅ {ok}</p>}
-      <button className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black">Réinitialiser</button>
+      <button disabled={loading} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{loading && <ButtonSpinner />} {loading ? 'Réinitialisation…' : 'Réinitialiser'}</button>
       <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 dark:text-zinc-400">← Retour</button>
     </form>
   );

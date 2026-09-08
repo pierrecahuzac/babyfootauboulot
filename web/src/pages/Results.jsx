@@ -1,9 +1,11 @@
-const Results = ({ matches, onSelect, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange, onLeagues, onLigues }) => {
+import { PageSpinner } from '../components/Spinner.jsx';
+
+const Results = ({ matches, loading, onSelect, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange, onLeagues, onLigues }) => {
   const leaguesData = leagues ?? ligues ?? [];
   const current = currentLeague ?? currentLigue;
   const handleChange = onHandleLeagueChange ?? onHandleLigueChange ?? onSelectLeague ?? onSelectLigue;
   const handleLeagues = onLeagues ?? onLigues;
-  if (!matches) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Chargement des matchs…</p>;
+  if (loading || !matches) return <PageSpinner label="Chargement des matchs…" />;
   
   return (
     <div className="space-y-6">

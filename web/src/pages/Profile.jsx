@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authFetch, setToken } from '../utils/auth.js';
+import { ButtonSpinner } from '../components/Spinner.jsx';
 
 const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
   const leaguesData = leagues ?? ligues ?? [];
@@ -14,6 +15,9 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
   const [err, setErr] = useState('');
   const [showDelete, setShowDelete] = useState(false);
   const [deletePwd, setDeletePwd] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -26,33 +30,45 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
 
   const saveProfile = async (e) => {
     e.preventDefault();
+    if (saving) return;
     setErr(''); setMsg('');
-    const r = await authFetch('/api/auth/me', { method: 'PATCH', body: JSON.stringify({ email, pseudo, poste, niveau }) });
-    const b = await r.json();
-    if (!r.ok) { setErr(b.error); return; }
-    setMsg('Profil mis à jour');
-    if (b.token) setToken(b.token);
-    onUpdate(b.user || { email, pseudo, poste, niveau });
+    setSaving(true);
+    try {
+      const r = await authFetch('/api/auth/me', { method: 'PATCH', body: JSON.stringify({ email, pseudo, poste, niveau }) });
+      const b = await r.json();
+      if (!r.ok) { setErr(b.error); return; }
+      setMsg('Profil mis à jour');
+      if (b.token) setToken(b.token);
+      onUpdate(b.user || { email, pseudo, poste, niveau });
+    } finally { setSaving(false); }
   };
 
   const changePwd = async (e) => {
     e.preventDefault();
+    if (pwdLoading) return;
     setErr(''); setMsg('');
     if (newPassword !== confirmNewPassword) { setErr('les mots de passe ne correspondent pas'); return; }
-    const r = await authFetch('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) });
-    const b = await r.json();
-    if (!r.ok) { setErr(b.error); return; }
-    setMsg('Mot de passe changé');
-    setOldPassword(''); setNewPassword(''); setConfirmNewPassword('');
+    setPwdLoading(true);
+    try {
+      const r = await authFetch('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) });
+      const b = await r.json();
+      if (!r.ok) { setErr(b.error); return; }
+      setMsg('Mot de passe changé');
+      setOldPassword(''); setNewPassword(''); setConfirmNewPassword('');
+    } finally { setPwdLoading(false); }
   };
 
   const del = async () => {
+    if (deleteLoading) return;
     setErr(''); setMsg('');
-    const r = await authFetch('/api/auth/me', { method: 'DELETE', body: JSON.stringify({ password: deletePwd }) });
-    const b = await r.json().catch(()=>({}));
-    if (!r.ok) { setErr(b.error || 'suppression échouée'); return; }
-    setToken(null);
-    window.location.reload();
+    setDeleteLoading(true);
+    try {
+      const r = await authFetch('/api/auth/me', { method: 'DELETE', body: JSON.stringify({ password: deletePwd }) });
+      const b = await r.json().catch(()=>({}));
+      if (!r.ok) { setErr(b.error || 'suppression échouée'); return; }
+      setToken(null);
+      window.location.reload();
+    } finally { setDeleteLoading(false); }
   };
 
   if (!user) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Non connecté</p>;
@@ -85,7 +101,7 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
               <option value="Débutant">Débutant</option><option value="Intermédiaire">Intermédiaire</option><option value="Confirmé">Confirmé</option>
             </select>
           </label>
-          <button className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-violet-700">Enregistrer</button>
+          <button disabled={saving} className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{saving && <ButtonSpinner />} {saving ? 'Enregistrement…' : 'Enregistrer'}</button>
         </form>
       </div>
 
@@ -96,7 +112,7 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
           <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nouveau (6+)" className="w-full border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-800" required />
           <input type="password" value={confirmNewPassword} onChange={e=>setConfirmNewPassword(e.target.value)} placeholder="Confirmer nouveau" className="w-full border border-zinc-200 dark:border-zinc-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-zinc-800" required />
           {confirmNewPassword && newPassword !== confirmNewPassword && <p className="text-xs text-amber-600">⚠️ les mots de passe ne correspondent pas</p>}
-          <button className="w-full bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white py-2.5 rounded-xl font-medium text-sm">Changer</button>
+          <button disabled={pwdLoading} className="w-full bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white py-2.5 rounded-xl font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{pwdLoading && <ButtonSpinner />} {pwdLoading ? 'Changement…' : 'Changer'}</button>
         </form>
       </div>
 
@@ -123,7 +139,7 @@ const Profile = ({ user, leagues, ligues, onUpdate, onLogout }) => {
             <input type="password" value={deletePwd} onChange={e=>setDeletePwd(e.target.value)} placeholder="Mot de passe" className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm" />
             <div className="flex gap-2">
               <button onClick={()=>setShowDelete(false)} className="flex-1 bg-white border border-zinc-200 py-2 rounded-lg font-medium text-sm">Annuler</button>
-              <button onClick={del} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium text-sm">Confirmer suppression</button>
+              <button onClick={del} disabled={deleteLoading} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{deleteLoading && <ButtonSpinner />} Confirmer suppression</button>
             </div>
           </div>
         )}

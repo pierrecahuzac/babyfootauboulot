@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import Spinner, { ButtonSpinner } from '../components/Spinner.jsx';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-const CreateMatch = ({ players, leagueId, ligueId, leagues, ligues, league, ligue, onLeagueChange, onLigueChange, onLeagues, onLigues, onDone, onBack }) => {
+const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, league, ligue, onLeagueChange, onLigueChange, onLeagues, onLigues, onDone, onBack }) => {
   const effectiveLeagueId = leagueId ?? ligueId;
   const leaguesData = leagues ?? ligues ?? [];
   const currentLeague = league ?? ligue ?? leaguesData.find(l => Number(l.id) === Number(effectiveLeagueId)) ?? null;
@@ -14,6 +15,7 @@ const CreateMatch = ({ players, leagueId, ligueId, leagues, ligues, league, ligu
   const [scoreBleue, setScoreBleue] = useState(10); const [scoreRouge, setScoreRouge] = useState(7);
   const [err, setErr] = useState('');
   const [isRandom, setIsRandom] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const toTeam = (pseudo, poste) => {
     const p = players.find(x => x.pseudo === pseudo);
@@ -56,6 +58,7 @@ const CreateMatch = ({ players, leagueId, ligueId, leagues, ligues, league, ligu
 
   const submit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setErr('');
     const team_bleue = format === '1v1' ? [toTeam(bleue1)] : [toTeam(bleue1, 'Attaque'), toTeam(bleue2, 'Défense')];
     const team_rouge = format === '1v1' ? [toTeam(rouge1)] : [toTeam(rouge1, 'Attaque'), toTeam(rouge2, 'Défense')];
@@ -63,12 +66,17 @@ const CreateMatch = ({ players, leagueId, ligueId, leagues, ligues, league, ligu
     const allPseudos = [...team_bleue, ...team_rouge].map(t=>t.pseudo);
     if (new Set(allPseudos).size !== allPseudos.length) { setErr('Un joueur ne peut pas être dans les deux équipes'); return; }
     if (!effectiveLeagueId) { setErr('Choisis une ligue d’abord (en haut)'); return; }
-    const res = await fetch(`${API}/api/matches`, {
-      method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(effectiveLeagueId) }, credentials: 'include',
-      body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: effectiveLeagueId })
-    });
-    if (!res.ok) { setErr((await res.json()).error); return; }
-    onDone();
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API}/api/matches`, {
+        method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(effectiveLeagueId) }, credentials: 'include',
+        body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: effectiveLeagueId })
+      });
+      if (!res.ok) { setErr((await res.json()).error); return; }
+      onDone();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const sel = (val,setter, posteLabel) => (
@@ -174,8 +182,9 @@ const CreateMatch = ({ players, leagueId, ligueId, leagues, ligues, league, ligu
         </div>
       </div>
 
+      {loading && <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400"><Spinner size={14} /> Chargement des joueurs…</div>}
       {err && <p className="text-sm text-red-700 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3 rounded-xl">{err}</p>}
-      <button type="submit" className="w-full bg-violet-600 text-white py-3.5 rounded-xl font-medium hover:bg-violet-700">Valider le match</button>
+      <button type="submit" disabled={submitting} className="w-full bg-violet-600 text-white py-3.5 rounded-xl font-medium hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2">{submitting && <ButtonSpinner />} {submitting ? 'Envoi…' : 'Valider le match'}</button>
       <button type="button" onClick={onBack} className="w-full text-sm text-zinc-500 hover:text-zinc-700">← Retour</button>
     </form>
   );

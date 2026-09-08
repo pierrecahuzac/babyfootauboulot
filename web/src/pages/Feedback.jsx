@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authFetch } from '../utils/auth.js';
+import Spinner, { ButtonSpinner } from '../components/Spinner.jsx';
 
 // Page Feedback — prod activé pour users connectés
 // Permet de reporter bug / idée / amélioration directement dans l'app (pas de mail)
@@ -92,14 +93,14 @@ const Feedback = ({ user }) => {
         </div>
         {err && <p className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 p-2.5 rounded-xl">⚠️ {err}</p>}
         {ok && <p className="text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 p-2.5 rounded-xl">✅ {ok}</p>}
-        <button type="submit" disabled={sending} className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-violet-700 disabled:opacity-50">{sending ? 'Envoi...' : 'Envoyer'}</button>
+        <button type="submit" disabled={sending} className="w-full bg-violet-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-violet-700 disabled:opacity-50 inline-flex items-center justify-center gap-2">{sending && <ButtonSpinner />} {sending ? 'Envoi…' : 'Envoyer'}</button>
       </form>
 
       <div className="flex items-center justify-between pt-2">
         <h3 className="font-semibold text-sm dark:text-zinc-100">{isAdmin ? `Tous les feedbacks (${items.length})` : `Mes feedbacks (${items.length})`}</h3>
-        <button onClick={load} className="text-xs border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800">Rafraîchir</button>
+        <button onClick={load} disabled={loading} className="text-xs border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-60 inline-flex items-center gap-1.5">{loading && <Spinner size={12} />} Rafraîchir</button>
       </div>
-      {loading && <p className="text-xs text-zinc-500 text-center py-4">Chargement...</p>}
+      {loading && <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 py-4"><Spinner size={16} /> Chargement…</div>}
       {!loading && items.length === 0 && <p className="text-xs text-zinc-500 text-center py-6 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl">Aucun feedback pour le moment.</p>}
       <div className="space-y-2">
         {items.map(f => (

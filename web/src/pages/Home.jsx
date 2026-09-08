@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { posteColor, niveauColor, initials, avatarBg } from '../utils/helpers.js';
+import { PageSpinner } from '../components/Spinner.jsx';
 
-const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap, onFeedback, onPlayerSelect }) => {
+const Home = ({ players, loading, onNav, user, league, ligue, onLeagues, onLigues, onRoadmap, onFeedback, onPlayerSelect }) => {
   const currentLeague = league ?? ligue;
   const handleLeagues = onLeagues ?? onLigues;
   const [showCode, setShowCode] = useState(false);
@@ -82,6 +83,8 @@ const Home = ({ players, onNav, user, league, ligue, onLeagues, onLigues, onRoad
           <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Connecte-toi pour voir les joueurs</p>
           <p className="text-xs text-zinc-500 mt-1">La liste est privée à ta ligue.</p>
         </div>
+      ) : loading ? (
+        <PageSpinner label="Chargement des joueurs…" />
       ) : (
         <>
           <div className="flex items-center justify-between pt-2">
