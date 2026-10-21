@@ -27,7 +27,6 @@ describe('Frontend professionnel - nettoyage messages dev', () => {
     expect(screen.queryByText(/35%/)).not.toBeInTheDocument();
     expect(screen.queryByText(/maquettes prêtes/)).not.toBeInTheDocument();
     expect(screen.getByText('Tournoi')).toBeInTheDocument();
-    expect(screen.getByText(/Disponible prochainement/)).toBeInTheDocument();
     expect(screen.getByText(/Au programme/)).toBeInTheDocument();
     expect(screen.getByText(/format coupe/)).toBeInTheDocument();
   });

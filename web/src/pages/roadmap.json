@@ -84,11 +84,10 @@
     "type": "feature"
   },
   {
-    "done": false,
+    "done": true,
     "label": "Système de tournoi — Solo, Duo, équipe choisie, équipe aléatoire",
     "version": "0.10",
-    "type": "feature",
-    "badge": "TODO"
+    "type": "feature"
   },
   {
     "done": false,

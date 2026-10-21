@@ -1,86 +1,297 @@
+import { useState } from 'react';
 import { initials, avatarBg } from '../utils/helpers.js';
 
-const BracketCard = ({ date, teamA, teamB, scoreA, scoreB }) => {
-  const winner = scoreA > scoreB ? 'A' : scoreB > scoreA ? 'B' : null;
-  const TeamRow = ({ team, score, isWinner }) => (
-    <div className={`flex justify-between items-center ${isWinner ? 'font-bold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'}`}>
-      <span className="flex items-center gap-1.5">
-        <span className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarBg(team.pseudo)} text-white flex items-center justify-center text-[10px] font-bold`}>{initials(team.pseudo)}</span>
-        <span className="truncate">{team.pseudo}</span>
-      </span>
-      <span className="flex items-center gap-1.5">{score} {isWinner && <span className="text-[10px]">◀</span>}</span>
-    </div>
-  );
+const shuffle = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+const nextPow2 = (n) => {
+  let s = 1;
+  while (s < n) s <<= 1;
+  return s;
+};
+
+const buildParticipants = (selected, format) => {
+  if (format === '1v1') return selected.map((p) => ({ key: p, label: p, players: [p] }));
+  const sh = shuffle(selected);
+  const teams = [];
+  for (let i = 0; i + 1 < sh.length; i += 2) {
+    teams.push({ key: `${sh[i]}+${sh[i + 1]}`, label: `${sh[i]} + ${sh[i + 1]}`, players: [sh[i], sh[i + 1]] });
+  }
+  return teams;
+};
+
+const buildBracket = (participants) => {
+  const size = nextPow2(participants.length || 1);
+  const slots = [...participants, ...Array(size - participants.length).fill(null)];
+  const rounds = [];
+  const first = [];
+  for (let i = 0; i < slots.length; i += 2) {
+    const a = slots[i];
+    const b = slots[i + 1];
+    const m = { a, b, winner: null, scoreA: '', scoreB: '' };
+    if (a && !b) m.winner = a;
+    if (!a && b) m.winner = b;
+    first.push(m);
+  }
+  rounds.push(first);
+  let prev = first;
+  while (prev.length > 1) {
+    const next = Array.from({ length: Math.floor(prev.length / 2) }, () => ({ a: null, b: null, winner: null, scoreA: '', scoreB: '' }));
+    prev.forEach((m, idx) => {
+      if (m.winner) {
+        const ni = Math.floor(idx / 2);
+        if (idx % 2 === 0) next[ni].a = m.winner;
+        else next[ni].b = m.winner;
+      }
+    });
+    next.forEach((m) => {
+      if (m.a && !m.b) m.winner = m.a;
+      if (!m.a && m.b) m.winner = m.b;
+    });
+    rounds.push(next);
+    prev = next;
+  }
+  // cascade auto-winners through rounds
+  for (let r = 0; r < rounds.length - 1; r++) {
+    rounds[r].forEach((m, idx) => {
+      if (m.winner) {
+        const ni = Math.floor(idx / 2);
+        const slot = idx % 2 === 0 ? 'a' : 'b';
+        if (rounds[r + 1][ni][slot] !== m.winner) rounds[r + 1][ni][slot] = m.winner;
+      }
+    });
+    rounds[r + 1].forEach((m) => {
+      if (m.a && !m.b) m.winner = m.a;
+      if (!m.a && m.b) m.winner = m.b;
+    });
+  }
+  return rounds;
+};
+
+const ParticipantView = ({ p }) => {
+  if (!p) return <span className="italic text-zinc-400">Exempté</span>;
+  const first = p.players?.[0] || p.label;
   return (
-    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 relative">
-      <div className="flex justify-between items-center text-[11px] text-zinc-500 dark:text-zinc-400">
-        <span>{date}</span>
-        <span className="bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 px-2 py-0.5 rounded-full text-[10px]">Terminé</span>
-      </div>
-      <div className="mt-2 space-y-1.5 text-sm">
-        <TeamRow team={teamA} score={scoreA} isWinner={winner==='A'} />
-        <TeamRow team={teamB} score={scoreB} isWinner={winner==='B'} />
-      </div>
-    </div>
+    <span className="flex items-center gap-1.5 min-w-0">
+      <span className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarBg(first)} text-white flex items-center justify-center text-[10px] font-bold shrink-0`}>{initials(first)}</span>
+      <span className="truncate">{p.label}</span>
+    </span>
   );
 };
 
-const Tournament = ({ onBack }) => {
+const Tournament = ({ onBack, players, user, league }) => {
+  const safePlayers = Array.isArray(players) ? players : [];
+  const [format, setFormat] = useState('1v1');
+  const [selected, setSelected] = useState(new Set());
+  const [mode, setMode] = useState('chosen');
+  const [playerCount, setPlayerCount] = useState(4);
+  const [bracket, setBracket] = useState(null);
+  const [err, setErr] = useState('');
+  const [generated, setGenerated] = useState(false);
+
+  const toggle = (pseudo) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(pseudo)) next.delete(pseudo);
+      else next.add(pseudo);
+      return next;
+    });
+  };
+
+  const generate = () => {
+    setErr('');
+    let chosen = [];
+    if (mode === 'chosen') {
+      chosen = safePlayers.filter((p) => selected.has(p.pseudo)).map((p) => p.pseudo);
+      if (chosen.length < 4) {
+        setErr('Sélectionne au moins 4 joueurs.');
+        return;
+      }
+      if (format === '2v2' && chosen.length % 2 !== 0) {
+        setErr('Pour un Duo, le nombre de joueurs doit être pair.');
+        return;
+      }
+    } else {
+      const n = Number(playerCount);
+      if (!Number.isInteger(n) || n < 4) {
+        setErr('Le nombre de joueurs doit être au moins 4.');
+        return;
+      }
+      if (n > safePlayers.length) {
+        setErr(`Pas assez de joueurs disponibles (${safePlayers.length}).`);
+        return;
+      }
+      if (format === '2v2' && n % 2 !== 0) {
+        setErr('Pour un Duo, le nombre de joueurs doit être pair.');
+        return;
+      }
+      chosen = shuffle(safePlayers.map((p) => p.pseudo)).slice(0, n);
+    }
+    const participants = buildParticipants(chosen, format);
+    if (participants.length < 2) {
+      setErr('Pas assez de participants pour générer un tournoi.');
+      return;
+    }
+    setBracket(buildBracket(participants));
+    setGenerated(true);
+  };
+
+  const reset = () => {
+    setBracket(null);
+    setGenerated(false);
+    setErr('');
+  };
+
+  const setWinner = (roundIndex, matchIndex, side) => {
+    if (!bracket) return;
+    const m = bracket[roundIndex][matchIndex];
+    const winner = side === 'a' ? m.a : m.b;
+    if (!winner || m.winner) return;
+    const next = bracket.map((r) => r.map((x) => ({ ...x })));
+    next[roundIndex][matchIndex].winner = winner;
+    if (roundIndex < next.length - 1) {
+      const ni = Math.floor(matchIndex / 2);
+      const slot = matchIndex % 2 === 0 ? 'a' : 'b';
+      next[roundIndex + 1][ni][slot] = winner;
+      const nm = next[roundIndex + 1][ni];
+      if (nm.a && !nm.b) nm.winner = nm.a;
+      if (!nm.a && nm.b) nm.winner = nm.b;
+      for (let r = roundIndex + 1; r < next.length - 1; r++) {
+        let changed = false;
+        next[r].forEach((mm, i) => {
+          if (mm.winner) {
+            const nni = Math.floor(i / 2);
+            const sslot = i % 2 === 0 ? 'a' : 'b';
+            if (next[r + 1][nni][sslot] !== mm.winner) {
+              next[r + 1][nni][sslot] = mm.winner;
+              changed = true;
+            }
+          }
+        });
+        next[r + 1].forEach((mm) => {
+          if (mm.a && !mm.b && mm.winner !== mm.a) { mm.winner = mm.a; changed = true; }
+          if (!mm.a && mm.b && mm.winner !== mm.b) { mm.winner = mm.b; changed = true; }
+        });
+        if (!changed) break;
+      }
+    }
+    setBracket(next);
+  };
+
+  const totalRounds = bracket ? bracket.length : 0;
+  const champion = bracket && totalRounds > 0 ? bracket[totalRounds - 1][0]?.winner : null;
+
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-6 text-center">
-        <div className="w-12 h-12 rounded-xl bg-violet-600 text-white flex items-center justify-center text-xl mx-auto">🏆</div>
-        <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 mt-3">Tournoi</h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Le mode tournoi arrive prochainement — prépare tes compétitions entre collègues.</p>
-        <div className="mt-3 flex justify-center">
-          <span className="text-xs font-medium bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 px-3 py-1 rounded-full">Disponible prochainement</span>
+      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 space-y-3">
+        <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <span className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center text-sm">🏆</span>
+          Tournoi
+        </h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 -mt-1">Génère un arbre à élimination à partir de tes joueurs.</p>
+        {league && <p className="text-xs text-zinc-500">Ligue : <span className="font-medium text-zinc-700 dark:text-zinc-300">{league.name}</span></p>}
+
+        <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+          <button type="button" onClick={() => { setFormat('1v1'); reset(); }} className={`flex-1 py-2.5 rounded-lg font-medium text-sm transition ${format === '1v1' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600' : 'text-zinc-500'}`}>Solo (1v1)</button>
+          <button type="button" onClick={() => { setFormat('2v2'); reset(); }} className={`flex-1 py-2.5 rounded-lg font-medium text-sm transition ${format === '2v2' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600' : 'text-zinc-500'}`}>Duo (2v2)</button>
+        </div>
+
+        <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+          <button type="button" onClick={() => setMode('chosen')} className={`flex-1 py-2 rounded-lg font-medium text-xs transition ${mode === 'chosen' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600' : 'text-zinc-500'}`}>Joueurs choisis</button>
+          <button type="button" onClick={() => setMode('random')} className={`flex-1 py-2 rounded-lg font-medium text-xs transition ${mode === 'random' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600' : 'text-zinc-500'}`}>Tirage aléatoire</button>
+        </div>
+
+        {mode === 'chosen' ? (
+        <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 space-y-2">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Participants (min. 4)</p>
+          {safePlayers.length === 0 && <p className="text-xs text-zinc-500">Aucun joueur dans cette ligue.</p>}
+          <div className="max-h-48 overflow-auto space-y-1">
+            {safePlayers.map((p) => (
+              <label key={p.id || p.pseudo} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" checked={selected.has(p.pseudo)} onChange={() => toggle(p.pseudo)} />
+                <span>{p.pseudo}</span>
+                <span className="text-xs text-zinc-500">· {p.poste}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-[11px] text-zinc-500">
+            {selected.size} joueur(s) sélectionné(s) — minimum 4.
+          </p>
+        </div>
+        ) : (
+        <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 space-y-2">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Nombre de joueurs (min. 4)</p>
+          <input type="number" min="4" max={safePlayers.length} value={playerCount} onChange={(e) => setPlayerCount(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 bg-white dark:bg-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-300" />
+          <p className="text-[11px] text-zinc-500">
+            {safePlayers.length} joueur(s) disponible(s) dans cette ligue.
+          </p>
+        </div>
+        )}
+
+        {err && <p className="text-sm text-red-700 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3 rounded-xl">{err}</p>}
+
+        <div className="flex gap-2">
+          <button type="button" onClick={generate} className="flex-1 bg-violet-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-violet-700">🎲 Générer le tournoi</button>
+          {generated && <button type="button" onClick={reset} className="flex-1 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl font-medium text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700">Réinitialiser</button>}
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
-        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">👁️</span>
-          Aperçu — format coupe
-        </h3>
+      {generated && bracket && (
+        <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 space-y-4">
+          <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">👁️</span>
+            Arbre à élimination
+          </h3>
 
-        <div className="mt-4 flex gap-3 items-center">
-          <div className="flex-1 space-y-3">
-            <BracketCard date="14/07" teamA={{ pseudo:'pierre_j' }} teamB={{ pseudo:'sarah_l' }} scoreA={5} scoreB={10} />
-            <BracketCard date="15/07" teamA={{ pseudo:'tom_m' }} teamB={{ pseudo:'lucas' }} scoreA={7} scoreB={10} />
-          </div>
-
-          <div className="hidden sm:flex flex-col items-center justify-center w-6 self-stretch">
-            <div className="flex-1 w-px bg-zinc-300 dark:bg-zinc-600" />
-            <div className="w-6 h-px bg-zinc-300 dark:bg-zinc-600 relative"><span className="absolute -right-1 -top-[5px] text-[8px] text-zinc-400">▶</span></div>
-            <div className="flex-1 w-px bg-zinc-300 dark:bg-zinc-600" />
-          </div>
-          <div className="hidden sm:block w-3 h-px bg-zinc-300 dark:bg-zinc-600 -ml-3 relative"><span className="absolute -right-1 -top-[5px] text-[8px] text-zinc-400">▶</span></div>
-
-          <div className="flex-1">
-            <BracketCard date="19/07" teamA={{ pseudo:'sarah_l' }} teamB={{ pseudo:'lucas' }} scoreA={10} scoreB={6} />
-          </div>
-        </div>
-
-        <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">Match pour la 3ème place</p>
-          <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3">
-            <div className="flex justify-between items-center text-[11px] text-zinc-500 dark:text-zinc-400">
-              <span>18/07</span>
-              <span className="bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 px-2 py-0.5 rounded-full text-[10px]">Terminé</span>
+          <div className="overflow-x-auto">
+            <div className="flex gap-4 min-w-max">
+              {bracket.map((round, ri) => (
+                <div key={ri} className="flex flex-col gap-3 justify-center">
+                  <p className="text-[11px] font-semibold text-zinc-500 uppercase text-center">
+                    {ri === totalRounds - 1 ? 'Finale' : ri === totalRounds - 2 ? 'Demi-finales' : `Tour ${ri + 1}`}
+                  </p>
+                  {round.map((m, mi) => (
+                    <div key={mi} className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 w-44">
+                      <div className={`space-y-1.5 text-sm ${m.winner ? '' : ''}`}>
+                        <div className={`flex justify-between items-center ${m.winner === m.a && m.a ? 'font-bold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                          <ParticipantView p={m.a} />
+                          {!m.winner && m.a && m.b && (
+                            <button type="button" onClick={() => setWinner(ri, mi, 'a')} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500 text-white">✓</button>
+                          )}
+                        </div>
+                        <div className="text-center text-[10px] text-zinc-400">vs</div>
+                        <div className={`flex justify-between items-center ${m.winner === m.b && m.b ? 'font-bold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                          <ParticipantView p={m.b} />
+                          {!m.winner && m.a && m.b && (
+                            <button type="button" onClick={() => setWinner(ri, mi, 'b')} className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500 text-white">✓</button>
+                          )}
+                        </div>
+                      </div>
+                      {m.winner && (
+                        <p className="mt-2 text-[10px] text-center text-emerald-600 font-semibold truncate">
+                          Vainqueur : {m.winner.label}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
-            <div className="mt-2 space-y-1.5 text-sm">
-              <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
-                <span className="flex items-center gap-1.5"><span className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarBg('pierre_j')} text-white flex items-center justify-center text-[10px] font-bold`}>{initials('pierre_j')}</span> pierre_j</span>
-                <span>7</span>
-              </div>
-              <div className="flex justify-between items-center font-bold text-zinc-900 dark:text-zinc-100">
-                <span className="flex items-center gap-1.5"><span className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarBg('tom_m')} text-white flex items-center justify-center text-[10px] font-bold`}>{initials('tom_m')}</span> tom_m</span>
-                <span className="flex items-center gap-1.5">10 <span className="text-[10px]">◀</span></span>
-              </div>
-            </div>
           </div>
+
+          {champion && (
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 text-center">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">🏆 Champion : {champion.label}</p>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-5">
         <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
@@ -95,12 +306,17 @@ const Tournament = ({ onBack }) => {
         </ul>
       </div>
 
+      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
+        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">👁️</span>
+          Aperçu — format coupe
+        </h3>
+      </div>
+
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 flex gap-2">
         <button onClick={() => onBack?.()} className="flex-1 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white py-2.5 rounded-xl font-medium text-sm">← Retour à l'accueil</button>
         <button onClick={() => (window.location.hash = '#roadmap')} className="flex-1 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-2.5 rounded-xl font-medium text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700">Voir la roadmap</button>
       </div>
-
-      <p className="text-xs text-zinc-500 text-center">Une suggestion pour le mode tournoi ? Partage-la via Feedback.</p>
     </div>
   );
 };
