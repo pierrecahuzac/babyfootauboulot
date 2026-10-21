@@ -34,7 +34,7 @@ const buildBracket = (participants) => {
   for (let i = 0; i < slots.length; i += 2) {
     const a = slots[i];
     const b = slots[i + 1];
-    const m = { a, b, winner: null, scoreA: '', scoreB: '' };
+    const m = { a, b, winner: null, scoreA: '', scoreB: '', postponed: false };
     if (a && !b) m.winner = a;
     if (!a && b) m.winner = b;
     first.push(m);
@@ -42,7 +42,7 @@ const buildBracket = (participants) => {
   rounds.push(first);
   let prev = first;
   while (prev.length > 1) {
-    const next = Array.from({ length: Math.floor(prev.length / 2) }, () => ({ a: null, b: null, winner: null, scoreA: '', scoreB: '' }));
+    const next = Array.from({ length: Math.floor(prev.length / 2) }, () => ({ a: null, b: null, winner: null, scoreA: '', scoreB: '', postponed: false }));
     prev.forEach((m, idx) => {
       if (m.winner) {
         const ni = Math.floor(idx / 2);
@@ -184,6 +184,15 @@ const Tournament = ({ onBack, players, user, league }) => {
     setBracket(next);
   };
 
+  const togglePostpone = (roundIndex, matchIndex) => {
+    if (!bracket) return;
+    const m = bracket[roundIndex][matchIndex];
+    if (m.winner) return;
+    const next = bracket.map((r) => r.map((x) => ({ ...x })));
+    next[roundIndex][matchIndex].postponed = !next[roundIndex][matchIndex].postponed;
+    setBracket(next);
+  };
+
   const totalRounds = bracket ? bracket.length : 0;
   const champion = bracket && totalRounds > 0 ? bracket[totalRounds - 1][0]?.winner : null;
 
@@ -261,22 +270,30 @@ const Tournament = ({ onBack, players, user, league }) => {
                       <div className={`space-y-1.5 text-sm ${m.winner ? '' : ''}`}>
                         <div className={`flex justify-between items-center ${m.winner === m.a && m.a ? 'font-bold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'}`}>
                           <ParticipantView p={m.a} />
-                          {!m.winner && m.a && m.b && (
+                          {!m.winner && m.a && m.b && !m.postponed && (
                             <button type="button" onClick={() => setWinner(ri, mi, 'a')} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500 text-white">✓</button>
                           )}
                         </div>
                         <div className="text-center text-[10px] text-zinc-400">vs</div>
                         <div className={`flex justify-between items-center ${m.winner === m.b && m.b ? 'font-bold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'}`}>
                           <ParticipantView p={m.b} />
-                          {!m.winner && m.a && m.b && (
+                          {!m.winner && m.a && m.b && !m.postponed && (
                             <button type="button" onClick={() => setWinner(ri, mi, 'b')} className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500 text-white">✓</button>
                           )}
                         </div>
                       </div>
+                      {m.postponed && !m.winner && (
+                        <p className="mt-2 text-[10px] text-center text-amber-600 font-semibold">Reporté</p>
+                      )}
                       {m.winner && (
                         <p className="mt-2 text-[10px] text-center text-emerald-600 font-semibold truncate">
                           Vainqueur : {m.winner.label}
                         </p>
+                      )}
+                      {!m.winner && m.a && m.b && (
+                        <button type="button" onClick={() => togglePostpone(ri, mi)} className="mt-2 w-full text-[10px] px-1.5 py-0.5 rounded border border-amber-300 text-amber-700 hover:bg-amber-50">
+                          {m.postponed ? 'Annuler le report' : 'Reporter le match'}
+                        </button>
                       )}
                     </div>
                   ))}
