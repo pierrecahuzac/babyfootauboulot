@@ -81,6 +81,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_a INT`);
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_b INT`);
     await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS ligue_id INT REFERENCES ligues(id) ON DELETE CASCADE`);
+    await pool.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS points_to_win INT DEFAULT 10`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS poste TEXT CHECK (poste IN ('Attaque','Défense','Les 2','Attaque / Défense'))`).catch(()=>{});
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS niveau TEXT CHECK (niveau IN ('Débutant','Intermédiaire','Confirmé'))`).catch(()=>{});
     await pool.query(`UPDATE users SET poste='Attaque / Défense' WHERE poste='Les 2'`).catch(()=>{});

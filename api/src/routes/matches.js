@@ -76,17 +76,19 @@ export default async function matchesRoutes(app, { db, pool, players, matches, u
     const score_bleue = req.body.score_bleue ?? req.body.score_a;
     const score_rouge = req.body.score_rouge ?? req.body.score_b;
     const { format, ligue_id } = req.body;
+    const pointsToWin = req.body.points_to_win ?? req.body.pointsToWin ?? req.body.points ?? req.body.max_points ?? req.body.maxPoints ?? req.body.max_score ?? req.body.maxScore ?? req.body.score_max ?? req.body.scoreMax ?? req.body.target ?? req.body.target_score ?? req.body.targetScore ?? req.body.to ?? 10;
     const ligueId = Number(ligue_id || req.query.ligue_id || req.headers['x-ligue-id']) || null;
     if (ligueId) {
       if (!await assertMember(req, reply, ligueId)) return;
     }
-    const err = validateMatchPayload({ format, team_bleue, team_rouge, score_bleue, score_rouge });
+    const err = validateMatchPayload({ format, team_bleue, team_rouge, score_bleue, score_rouge, points_to_win: pointsToWin }, pointsToWin);
     if (err) return reply.code(400).send({ error: err });
+    const pts = Number(pointsToWin) || 10;
     const [row] = await db.insert(matches).values({
-      format, teamBleue: team_bleue, teamRouge: team_rouge, scoreBleue: Number(score_bleue), scoreRouge: Number(score_rouge), ligueId: ligueId || null
+      format, teamBleue: team_bleue, teamRouge: team_rouge, scoreBleue: Number(score_bleue), scoreRouge: Number(score_rouge), ligueId: ligueId || null, pointsToWin: pts
     }).returning();
-    if (ligueId) await pool.query(`UPDATE matches SET ligue_id=$2, team_a=$3, team_b=$4, score_a=$5, score_b=$6 WHERE id=$1`, [row.id, ligueId, JSON.stringify(team_bleue), JSON.stringify(team_rouge), Number(score_bleue), Number(score_rouge)]).catch(()=>{});
-    else await pool.query(`UPDATE matches SET team_a=$2, team_b=$3, score_a=$4, score_b=$5 WHERE id=$1`, [row.id, JSON.stringify(team_bleue), JSON.stringify(team_rouge), Number(score_bleue), Number(score_rouge)]).catch(()=>{});
+    if (ligueId) await pool.query(`UPDATE matches SET ligue_id=$2, team_a=$3, team_b=$4, score_a=$5, score_b=$6, points_to_win=$7 WHERE id=$1`, [row.id, ligueId, JSON.stringify(team_bleue), JSON.stringify(team_rouge), Number(score_bleue), Number(score_rouge), pts]).catch(()=>{});
+    else await pool.query(`UPDATE matches SET team_a=$2, team_b=$3, score_a=$4, score_b=$5, points_to_win=$6 WHERE id=$1`, [row.id, JSON.stringify(team_bleue), JSON.stringify(team_rouge), Number(score_bleue), Number(score_rouge), pts]).catch(()=>{});
     return reply.code(201).send(normalizeMatch(row));
   });
 

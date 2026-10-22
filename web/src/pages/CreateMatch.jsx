@@ -13,6 +13,7 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
   const [bleue1, setBleue1] = useState(''); const [bleue2, setBleue2] = useState('');
   const [rouge1, setRouge1] = useState(''); const [rouge2, setRouge2] = useState('');
   const [scoreBleue, setScoreBleue] = useState(10); const [scoreRouge, setScoreRouge] = useState(7);
+  const [pointsToWin, setPointsToWin] = useState(10);
   const [err, setErr] = useState('');
   const [isRandom, setIsRandom] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -73,7 +74,7 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
     try {
       const res = await fetch(`${API}/api/matches`, {
         method:'POST', headers:{ 'Content-Type':'application/json', ...(() => { const t=localStorage.getItem('babyfoot_token'); return t?{Authorization:`Bearer ${t}`}:{}; })(), 'X-Ligue-Id': String(effectiveLeagueId) }, credentials: 'include',
-        body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: effectiveLeagueId })
+        body: JSON.stringify({ format, team_bleue, team_rouge, score_bleue: Number(scoreBleue), score_rouge: Number(scoreRouge), ligue_id: effectiveLeagueId, points_to_win: Number(pointsToWin), points: Number(pointsToWin) })
       });
       if (!res.ok) { setErr((await res.json()).error); return; }
       onDone();
@@ -180,15 +181,26 @@ const CreateMatch = ({ players, loading, leagueId, ligueId, leagues, ligues, lea
       </div>
 
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Match en</p>
+        <div className="flex gap-2 mt-2">
+          {[5, 10].map((p) => (
+            <button key={p} type="button" onClick={() => setPointsToWin(p)} className={`flex-1 py-2 rounded-lg text-sm font-medium border transition ${pointsToWin === p ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200'}`}>
+              {p} points
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Score final</p>
         <div className="flex gap-3 items-center mt-3">
           <div className="flex-1 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 flex items-center gap-2 bg-white dark:bg-zinc-800">
             <span className="w-2 h-2 rounded-full bg-sky-500"></span>
-            <input type="number" min="0" max="10" value={scoreBleue} onChange={e=>setScoreBleue(e.target.value)} className="w-full font-semibold text-center focus:outline-none bg-transparent" />
+            <input type="number" min="0" max={pointsToWin} value={scoreBleue} onChange={e=>setScoreBleue(e.target.value)} className="w-full font-semibold text-center focus:outline-none bg-transparent" />
           </div>
           <span className="font-medium text-zinc-400">—</span>
           <div className="flex-1 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 flex items-center gap-2 bg-white dark:bg-zinc-800">
-            <input type="number" min="0" max="10" value={scoreRouge} onChange={e=>setScoreRouge(e.target.value)} className="w-full font-semibold text-center focus:outline-none bg-transparent" />
+            <input type="number" min="0" max={pointsToWin} value={scoreRouge} onChange={e=>setScoreRouge(e.target.value)} className="w-full font-semibold text-center focus:outline-none bg-transparent" />
             <span className="w-2 h-2 rounded-full bg-rose-500"></span>
           </div>
         </div>
