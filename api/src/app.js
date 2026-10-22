@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import liguesRoutes from './routes/ligues.js';
 import playersRoutes from './routes/players.js';
 import matchesRoutes from './routes/matches.js';
+import tournoisRoutes from './routes/tournois.js';
 import adminRoutes from './routes/admin.js';
 import feedbackRoutes from './routes/feedback.js';
 
@@ -130,6 +131,16 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `).catch(()=>{});
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tournois (
+        id SERIAL PRIMARY KEY,
+        ligue_id INT REFERENCES ligues(id) ON DELETE CASCADE,
+        format TEXT NOT NULL,
+        participants JSONB NOT NULL DEFAULT '[]',
+        champion JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `).catch(()=>{});
 
     const hasLigue = await pool.query(`SELECT id FROM ligues LIMIT 1`).then(r=>r.rows[0]).catch(()=>null);
     if (!hasLigue) {
@@ -183,6 +194,7 @@ export const createApp = async ({ db, pool, players, matches, users, ligues, lig
   await liguesRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await playersRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await matchesRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
+  await tournoisRoutes(app, { db, pool, users, ligues, ligueMembers });
   await adminRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
   await feedbackRoutes(app, { db, pool, players, matches, users, ligues, ligueMembers });
 

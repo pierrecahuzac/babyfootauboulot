@@ -32,6 +32,7 @@ const App = () => {
   const [players, setPlayers] = useState([]);
   const [stats, setStats] = useState(null);
   const [matches, setMatches] = useState([]);
+const [tournaments, setTournaments] = useState([]);
   const [user, setUser] = useState(null);
   const [leagues, setLeagues] = useState([]);
   const [currentLeague, setCurrentLeague] = useState(() => {
@@ -70,13 +71,15 @@ const App = () => {
     setLoadingData(true);
     try {
       const q = leagueId ? `?ligue_id=${leagueId}` : '';
-      const [p, s] = await Promise.all([
+      const [p, s, t] = await Promise.all([
         authFetch(`/api/players${q}`).then(r => r.json()).catch(()=>[]),
         authFetch(`/api/stats${q}`).then(r => r.json()).catch(()=>({ classement: [], matches: [] })),
+        authFetch(`/api/tournois${q}`).then(r => r.json()).catch(()=>[]),
       ]);
       setPlayers(Array.isArray(p) ? p : []);
       setStats(s.classement ?? []);
       setMatches(s.matches ?? []);
+      setTournaments(Array.isArray(t) ? t : []);
     } finally {
       setLoadingData(false);
     }
@@ -227,10 +230,10 @@ const App = () => {
           {view === 'leagues' && (user ? <Leagues leagues={leagues} loadingLeagues={loadingLeagues} currentLeague={currentLeague} onSelect={selectLeague} onRefresh={loadLeagues} user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour gérer tes ligues</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'createMatch' && (user ? <CreateMatch players={players} loading={loadingData} leagueId={currentLeague} leagues={leagues} league={leagues.find(l=>l.id===currentLeague)} onLeagueChange={handleLeagueChange} onLeagues={()=>safeSetView('leagues')} onDone={() => { refresh(); safeSetView('leaderboard'); }} onBack={() => safeSetView('home')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour créer un match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'leaderboard' && (user ? <Leaderboard leaderboard={stats} loading={loadingData} players={players} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} onPlayerSelect={openPlayer} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le classement</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'results' && (user ? <Results matches={matches} loading={loadingData} onSelect={openMatch} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} onLeagues={()=>safeSetView('leagues')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
+          {view === 'results' && (user ? <Results matches={matches} tournaments={tournaments} loading={loadingData} onSelect={openMatch} leagues={leagues} currentLeague={currentLeague} onSelectLeague={selectLeague} onHandleLeagueChange={handleLeagueChange} onLeagues={()=>safeSetView('leagues')} onRefresh={refresh} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir les matchs</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'matchDetail' && (user ? <MatchDetail match={selectedMatch} league={leagues.find(l=>l.id=== (selectedMatch?.ligue_id ?? selectedMatch?.ligueId ?? selectedMatch?.league_id))} onBack={()=>safeSetView('results')} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le match</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
           {view === 'playerDetail' && (user ? <PlayerDetail player={selectedPlayer} stats={stats} matches={matches} league={leagues.find(l=>l.id===currentLeague)} onBack={()=>safeSetView('home')} onSelectMatch={openMatch} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour voir le joueur</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
-          {view === 'tournament' && <Tournament onBack={()=>safeSetView('home')} players={players} user={user} league={leagues.find(l=>l.id===currentLeague)} />}
+          {view === 'tournament' && <Tournament onBack={()=>safeSetView('home')} players={players} user={user} league={leagues.find(l=>l.id===currentLeague)} onSaved={()=>refresh(currentLeague)} />}
           {view === 'roadmap' && <Roadmap />}
           {view === 'feedback' && (user ? <Feedback user={user} /> : <div className="border border-dashed border-zinc-300 dark:border-zinc-600 rounded-xl p-8 text-center bg-zinc-50 dark:bg-zinc-800/50"><p className="text-sm font-medium">Connecte-toi pour envoyer un feedback</p><p className="text-xs text-zinc-500 mt-1">Bug, idée ou suggestion — directement dans l'app.</p><button onClick={()=>setView('login')} className="mt-3 bg-violet-600 text-white px-5 py-2 rounded-full text-sm">Connexion</button></div>)}
         </main>
