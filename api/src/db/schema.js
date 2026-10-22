@@ -47,6 +47,15 @@ export const ligues = pgTable('ligues', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+export const tournois = pgTable('tournois', {
+  id: serial('id').primaryKey(),
+  ligueId: integer('ligue_id').references(() => ligues.id, { onDelete: 'cascade' }),
+  format: text('format').notNull(),
+  participants: jsonb('participants').notNull().default([]),
+  champion: jsonb('champion'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
 export const ligueMembers = pgTable('ligue_members', {
   id: serial('id').primaryKey(),
   ligueId: integer('ligue_id').notNull().references(() => ligues.id, { onDelete: 'cascade' }),

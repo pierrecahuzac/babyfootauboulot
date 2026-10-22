@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { authFetch } from '../utils/auth.js';
 import { initials, avatarBg } from '../utils/helpers.js';
 
 const shuffle = (arr) => {
@@ -85,7 +86,7 @@ const ParticipantView = ({ p }) => {
   );
 };
 
-const Tournament = ({ onBack, players, user, league }) => {
+const Tournament = ({ onBack, players, user, league, onSaved }) => {
   const safePlayers = Array.isArray(players) ? players : [];
   const [format, setFormat] = useState('1v1');
   const [selected, setSelected] = useState(new Set());
@@ -94,6 +95,9 @@ const Tournament = ({ onBack, players, user, league }) => {
   const [bracket, setBracket] = useState(null);
   const [err, setErr] = useState('');
   const [generated, setGenerated] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState('');
 
   const toggle = (pseudo) => {
     setSelected((prev) => {
@@ -133,12 +137,13 @@ const Tournament = ({ onBack, players, user, league }) => {
       }
       chosen = shuffle(safePlayers.map((p) => p.pseudo)).slice(0, n);
     }
-    const participants = buildParticipants(chosen, format);
-    if (participants.length < 2) {
+    const participantsBuilt = buildParticipants(chosen, format);
+    if (participantsBuilt.length < 2) {
       setErr('Pas assez de participants pour générer un tournoi.');
       return;
     }
-    setBracket(buildBracket(participants));
+    setParticipants(participantsBuilt);
+    setBracket(buildBracket(participantsBuilt));
     setGenerated(true);
   };
 
@@ -146,6 +151,8 @@ const Tournament = ({ onBack, players, user, league }) => {
     setBracket(null);
     setGenerated(false);
     setErr('');
+    setParticipants([]);
+    setSavedMsg('');
   };
 
   const setWinner = (roundIndex, matchIndex, side) => {
@@ -195,6 +202,28 @@ const Tournament = ({ onBack, players, user, league }) => {
 
   const totalRounds = bracket ? bracket.length : 0;
   const champion = bracket && totalRounds > 0 ? bracket[totalRounds - 1][0]?.winner : null;
+
+  const saveTournament = async () => {
+    if (!champion) return;
+    setSaving(true);
+    setSavedMsg('');
+    try {
+      const payload = {
+        format,
+        participants: participants.map(p => ({ label: p.label, players: p.players })),
+        champion: { label: champion.label, players: champion.players },
+        ligue_id: league?.id || null,
+      };
+      const r = await authFetch('/api/tournois', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error('save failed');
+      setSavedMsg('Tournoi enregistré');
+      onSaved?.();
+    } catch {
+      setSavedMsg('Erreur lors de l’enregistrement');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -303,8 +332,12 @@ const Tournament = ({ onBack, players, user, league }) => {
           </div>
 
           {champion && (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 text-center">
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 text-center space-y-2">
               <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">🏆 Champion : {champion.label}</p>
+              <button type="button" onClick={saveTournament} disabled={saving} className="bg-violet-600 text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-violet-700 disabled:opacity-50">
+                {saving ? 'Enregistrement…' : '💾 Enregistrer ce tournoi'}
+              </button>
+              {savedMsg && <p className="text-[11px] text-zinc-500">{savedMsg}</p>}
             </div>
           )}
         </div>

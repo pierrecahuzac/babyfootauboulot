@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { PageSpinner } from '../components/Spinner.jsx';
 
-const Results = ({ matches, loading, onSelect, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange, onLeagues, onLigues }) => {
+const Results = ({ matches, tournaments, loading, onSelect, leagues, ligues, currentLeague, currentLigue, onSelectLeague, onSelectLigue, onHandleLeagueChange, onHandleLigueChange, onLeagues, onLigues, onRefresh }) => {
   const leaguesData = leagues ?? ligues ?? [];
   const current = currentLeague ?? currentLigue;
   const handleChange = onHandleLeagueChange ?? onHandleLigueChange ?? onSelectLeague ?? onSelectLigue;
   const handleLeagues = onLeagues ?? onLigues;
+  const [tab, setTab] = useState('matches');
   if (loading || !matches) return <PageSpinner label="Chargement des matchs…" />;
-  
+
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+
   return (
     <div className="space-y-6">
       <div className="mb-3">
@@ -20,8 +24,13 @@ const Results = ({ matches, loading, onSelect, leagues, ligues, currentLeague, c
           Gérer ligues
         </button>
       </div>
+      <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+        <button type="button" onClick={() => setTab('matches')} className={`flex-1 py-2 rounded-lg font-medium text-xs transition ${tab === 'matches' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600' : 'text-zinc-500'}`}>Matchs</button>
+        <button type="button" onClick={() => setTab('tournaments')} className={`flex-1 py-2 rounded-lg font-medium text-xs transition ${tab === 'tournaments' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-600' : 'text-zinc-500'}`}>Tournois</button>
+      </div>
+      {tab === 'matches' && (
       <div>
-        <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">📊</span> Résultats</h2>
+        <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">📊</span> Résultats de matchs</h2>
         <div className="space-y-2 mt-3">
           {matches.map(m=>{
             const bleue = m.team_bleue ?? m.team_a;
@@ -33,10 +42,10 @@ const Results = ({ matches, loading, onSelect, leagues, ligues, currentLeague, c
             const borderCls = winBleue ? 'border-sky-300 dark:border-sky-800' : winRouge ? 'border-rose-300 dark:border-rose-800' : 'border-zinc-200 dark:border-zinc-700';
             const fmt = (t) => {
               if (m.format === '1v1' || !t.poste) return t.pseudo;
-              return `${t.pseudo}${t.poste ? ` ${t.poste==='Attaque'?'· Att':'Att'===t.poste?'· Att':t.poste==='Défense'?'· Déf':'·'}` : ''}`;
+              return `${t.pseudo}${t.poste ? ` ${t.poste==='Attaque'?'· Att':t.poste==='Défense'?'· Déf':'·'}` : ''}`;
             };
             const d = m.created_at ?? m.createdAt ?? m.created_at;
-            const dateStr = d ? new Date(d).toLocaleDateString('fr-FR', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+            const dateStr = fmtDate(d);
             const formatLabel = m.format === '1v1' ? 'Solo' : m.format === '2v2' ? 'Duo' : (m.format || '');
             return (
             <div key={m.id} onClick={()=>onSelect?.(m)} className={`border rounded-xl p-3.5 bg-white dark:bg-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition ${borderCls}`}>
@@ -58,6 +67,32 @@ const Results = ({ matches, loading, onSelect, leagues, ligues, currentLeague, c
           {matches.length===0 && <p className="text-xs text-zinc-400 text-center py-4">Aucun match joué</p>}
         </div>
       </div>
+      )}
+      {tab === 'tournaments' && (
+      <div>
+        <h2 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><span className="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">🏅</span> Résultats de tournois</h2>
+        <div className="space-y-2 mt-3">
+          {(tournaments||[]).map(t=>{
+            const champion = t.champion;
+            const champLabel = champion?.label ?? champion ?? '—';
+            const fmt = t.format === '1v1' ? 'Solo' : t.format === '2v2' ? 'Duo' : (t.format || '');
+            const dateStr = fmtDate(t.created_at ?? t.createdAt);
+            const parts = Array.isArray(t.participants) ? t.participants.length : 0;
+            return (
+            <div key={t.id} className="border rounded-xl p-3.5 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+              <div className="flex justify-between items-center">
+                <div className="text-sm font-medium flex-1 min-w-0">
+                  <span className="px-2.5 py-1 rounded-full text-xs border bg-amber-500 text-white border-amber-500">🏆 {champLabel}</span>
+                </div>
+                <span className="text-xs text-zinc-400 shrink-0 ml-3">{parts} participants</span>
+              </div>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2">{[fmt, dateStr].filter(Boolean).join(' · ')}</p>
+            </div>
+          )})}
+          {(tournaments||[]).length===0 && <p className="text-xs text-zinc-400 text-center py-4">Aucun tournoi enregistré</p>}
+        </div>
+      </div>
+      )}
       <div className="h-10" />
     </div>
   );
