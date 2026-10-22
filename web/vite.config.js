@@ -22,7 +22,11 @@ export default defineConfig({
       ]
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+      cleanupOutdatedCaches: true,
+      skipWaiting: true,
+      clientsClaim: true,
+      navigateFallback: null,
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/babyfootauboulot\.onrender\.com\/.*/i,
@@ -32,7 +36,7 @@ export default defineConfig({
         {
           urlPattern: ({ request }) => request.destination === 'document',
           handler: 'NetworkFirst',
-          options: { cacheName: 'pages-cache' }
+          options: { cacheName: 'pages-cache', networkTimeoutSeconds: 3 }
         }
       ]
     },
