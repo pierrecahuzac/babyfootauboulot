@@ -3,12 +3,15 @@ export const normalizeMatch = (m) => {
   const teamRouge = m.teamRouge ?? m.team_rouge ?? m.teamB ?? m.team_b;
   const scoreBleue = m.scoreBleue ?? m.score_bleue ?? m.scoreA ?? m.score_a;
   const scoreRouge = m.scoreRouge ?? m.score_rouge ?? m.scoreB ?? m.score_b;
+  const pointsToWin = m.pointsToWin ?? m.points_to_win ?? m.points ?? m.max_points ?? m.maxPoints ?? m.max_score ?? m.maxScore ?? m.score_max ?? m.scoreMax ?? m.target ?? m.target_score ?? m.targetScore ?? m.to ?? 10;
+  const pts = Number(pointsToWin) || 10;
   return {
     ...m,
     teamBleue, teamRouge, scoreBleue, scoreRouge,
     team_bleue: teamBleue, team_rouge: teamRouge, score_bleue: scoreBleue, score_rouge: scoreRouge,
     team_a: teamBleue, team_b: teamRouge, score_a: scoreBleue, score_b: scoreRouge,
     teamA: teamBleue, teamB: teamRouge, scoreA: scoreBleue, scoreB: scoreRouge,
+    points_to_win: pts, pointsToWin: pts, points: pts, max_score: pts, maxScore: pts, target: pts, target_score: pts, targetScore: pts,
   };
 };
 
@@ -36,7 +39,17 @@ export const calculateClassement = (allPlayers, allMatches) => {
   return classement;
 };
 
-export const validateMatchPayload = ({ format, team_bleue, team_rouge, score_bleue, score_rouge }) => {
+const getMaxPoints = (payload, maxPoints) => {
+  if (maxPoints != null) return Number(maxPoints);
+  const p = payload || {};
+  const raw = p.points_to_win ?? p.pointsToWin ?? p.points ?? p.max_points ?? p.maxPoints ?? p.max_score ?? p.maxScore ?? p.score_max ?? p.scoreMax ?? p.target ?? p.target_score ?? p.targetScore ?? p.to ?? p.race_to ?? p.raceTo;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 10;
+  return Math.min(10, Math.max(1, Math.round(n)));
+};
+
+export const validateMatchPayload = (payload, maxPoints) => {
+  const { format, team_bleue, team_rouge, score_bleue, score_rouge } = payload || {};
   if (!format || !team_bleue || !team_rouge || score_bleue == null || score_rouge == null) {
     return 'format, team_bleue, team_rouge, score_bleue, score_rouge requis';
   }
@@ -46,9 +59,10 @@ export const validateMatchPayload = ({ format, team_bleue, team_rouge, score_ble
   if (format === '2v2' && (team_bleue.length !== 2 || team_rouge.length !== 2)) {
     return '2v2 = 2 joueurs par équipe';
   }
+  const max = getMaxPoints(payload, maxPoints);
   const sb = Number(score_bleue), sr = Number(score_rouge);
-  if (!Number.isInteger(sb) || !Number.isInteger(sr) || sb < 0 || sb > 10 || sr < 0 || sr > 10) {
-    return 'scores 0-10 entiers requis';
+  if (!Number.isInteger(sb) || !Number.isInteger(sr) || sb < 0 || sb > max || sr < 0 || sr > max) {
+    return `scores 0-${max} entiers requis`;
   }
   const all = [...team_bleue, ...team_rouge].map(t => t.pseudo);
   if (new Set(all).size !== all.length) return 'Un joueur ne peut pas être dans les deux équipes';

@@ -31,6 +31,7 @@ export const matches = pgTable('matches', {
   teamRouge: jsonb('team_rouge').notNull().$type(),
   scoreBleue: integer('score_bleue').notNull(),
   scoreRouge: integer('score_rouge').notNull(),
+  pointsToWin: integer('points_to_win').default(10),
   ligueId: integer('ligue_id').references(() => ligues.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

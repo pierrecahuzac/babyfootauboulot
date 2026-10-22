@@ -66,6 +66,7 @@ const MatchDetail = ({ match, onBack, ligue, league }) => {
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Détails</p>
         <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
           <li>Format : {formatLabel}</li>
+          <li>Points pour gagner : {match.points_to_win ?? match.pointsToWin ?? match.points ?? 10}</li>
           <li>Date : {dateStr || '—'}</li>
           <li className={isDraw ? '' : winBleue ? 'text-sky-700 font-medium' : 'text-rose-700 font-medium'}>{winnerText}</li>
         </ul>
